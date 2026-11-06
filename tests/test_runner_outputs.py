@@ -191,7 +191,7 @@ def test_actual_cloudtechnext_manifest_parser_and_output_projection(state):
             pytest.fail("Configured CloudTechNext source checkout is unavailable")
         pytest.skip("Optional real CTN consumer check requires CLOUDTECHNEXT_SOURCE_ROOT")
     program = '''
-import ast, io, json, sys, zipfile
+import ast, copy, io, json, sys, zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 sys.path.insert(0, sys.argv[1])
@@ -204,6 +204,23 @@ buffer.seek(0)
 with zipfile.ZipFile(buffer) as archive:
     info = archive.getinfo("terraform/deploy-studio.json")
     model, _ = _read_manifest(archive, [(info, PurePosixPath(info.filename))])
+assert model.schema_version == 2 and model.form.groups[0].id == "credentials"
+for version in (1, 2):
+    invalid = copy.deepcopy(payload["manifest"])
+    invalid["schema_version"] = version
+    del invalid["form"]["groups"]
+    legacy = io.BytesIO()
+    with zipfile.ZipFile(legacy, "w") as archive:
+        archive.writestr("terraform/deploy-studio.json", json.dumps(invalid))
+    legacy.seek(0)
+    with zipfile.ZipFile(legacy) as archive:
+        info = archive.getinfo("terraform/deploy-studio.json")
+        try:
+            _read_manifest(archive, [(info, PurePosixPath(info.filename))])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Runner accepted a manifest without the schema 2 layout")
 # Load the actual pure projection without initializing CTN's database/services.
 path = Path(sys.argv[1]) / "app/services/oci_artifacts.py"
 tree = ast.parse(path.read_text(encoding="utf-8"))

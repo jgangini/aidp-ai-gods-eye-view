@@ -70,3 +70,7 @@ Object Storage, Gold, checkpoints y recibos conservan el estado durable. SQLite 
 ## Verificación de una instalación
 
 Un post-apply satisfactorio comprueba task/publicación, recibo de imágenes y salud TLS, incluida respuesta 401 para sesión anónima. Devuelve `installed_conversation_pending`: no acredita una conversación del agente. Permisos negativos, confianza Browser y comportamiento nativo necesitan aceptación en el entorno real. Las pruebas locales y los mocks no sustituyen esa aceptación.
+
+## Formulario declarativo de Deploy Studio
+
+`terraform/deploy-studio.json` utiliza `schema_version: 2`. `form.groups` declara los títulos y el orden de los grupos; cada lista `items` fija el orden de campos, archivos y controles comunes, y `span` su ancho en columnas. Región ocupa una fila completa con `span: 2`, seguida del modo y nombre del compartimento. Los campos declaran valores predeterminados y condiciones de visibilidad. CloudTechNext valida las referencias y requiere este contrato; no reconstruye formularios antiguos. Las credenciales se cargan en el grupo `credentials`; los demás controles se habilitan tras validarlas. Las releases publicadas conservan sus manifiestos inmutables: este contrato requiere una nueva release y un motor compatible.

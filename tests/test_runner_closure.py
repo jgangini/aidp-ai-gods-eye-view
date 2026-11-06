@@ -1,10 +1,40 @@
 """Keep the hook archive inside the actual Deploy Studio source limits."""
 import json
+from collections import Counter
 from pathlib import Path, PurePosixPath
 import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_form_schema2_defines_the_complete_layout_without_legacy_inference():
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == 2
+    form = manifest["form"]
+    groups = form["groups"]
+    assert groups[0]["id"] == "credentials"
+    assert [(item["kind"], item["name"]) for item in groups[0]["items"]] == [
+        ("control", "oci_config"), ("control", "oci_key")]
+    assert len({group["id"] for group in groups}) == len(groups)
+    assert all(group["title"].strip() and group["items"] for group in groups)
+    services = next(group for group in groups if group["id"] == "services")
+    assert [item["name"] for item in services["items"]] == [
+        "oci_region", "compartment_mode", "new_compartment", "existing_compartment"]
+    assert services["items"][0]["span"] == 2
+    references = Counter((item["kind"], item["name"]) for group in groups for item in group["items"])
+    expected = {(kind, field["name"]) for kind, fields in (("field", form["fields"]), ("file", form.get("files", [])))
+        for field in fields}
+    controls = {"oci_config", "oci_key", "oci_region", "compartment_mode", "new_compartment", "existing_compartment"}
+    assert references == Counter({reference: 1 for reference in expected | {("control", name) for name in controls}})
+    for group in groups:
+        for item in group["items"]:
+            assert item.get("span", 1) in (1, 2)
+            if item["kind"] == "control":
+                assert item["label"].strip()
+                if item["name"] == "compartment_mode":
+                    assert [option["value"] for option in item["options"]] == manifest["capabilities"]["compartment_modes"]
+                    assert all(option["label"].strip() for option in item["options"])
 
 
 def test_runner_archive_is_bounded_and_excludes_viewer_ui_and_corpus_payloads():
