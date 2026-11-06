@@ -1,7 +1,8 @@
 """Exact VM Run Command public-key retrieval; extracted from frozen source."""
+from typing import Any
 from native_api import ReconcileError, _sleep
 BOOTSTRAP_READY = "GODS_EYE_VIEW_BOOTSTRAP_READY"
-PUBLIC_KEY_SCRIPT = "attempt=0; while [ $attempt -lt 120 ]; do if [ -x /usr/local/sbin/gods-eye-view-bootstrap-public-key ]; then exec sudo /usr/local/sbin/gods-eye-view-bootstrap-public-key; fi; attempt=$((attempt + 1)); sleep 5; done; exit 1"
+PUBLIC_KEY_SCRIPT = "attempt=0; while [ $attempt -lt 120 ]; do if [ -x /usr/local/sbin/gods-eye-view-bootstrap-public-key ] && sudo /usr/local/sbin/gods-eye-view-bootstrap-public-key 2>/dev/null; then exit 0; fi; attempt=$((attempt + 1)); sleep 5; done; exit 1"
 def parse_public_key_output(text: str) -> str:
     if text.strip() == BOOTSTRAP_READY:
         return BOOTSTRAP_READY
@@ -14,7 +15,7 @@ def parse_public_key_output(text: str) -> str:
     return public_key
 
 
-def fetch_bootstrap_public_key(
+def fetch_vm_public_output(
     client: Any,
     oci_module: Any,
     compartment_id: str,
@@ -22,7 +23,9 @@ def fetch_bootstrap_public_key(
     *,
     attempts: int = 150,
     create_attempts: int = 60,
-) -> str:
+    script: str = PUBLIC_KEY_SCRIPT,
+    parser=parse_public_key_output,
+) -> Any:
     models = oci_module.compute_instance_agent.models
     details = models.CreateInstanceAgentCommandDetails(
         compartment_id=compartment_id,
@@ -30,7 +33,7 @@ def fetch_bootstrap_public_key(
         display_name="aidp-lab-bootstrap-public-key",
         target=models.InstanceAgentCommandTarget(instance_id=instance_id),
         content=models.InstanceAgentCommandContent(
-            source=models.InstanceAgentCommandSourceViaTextDetails(text=PUBLIC_KEY_SCRIPT),
+            source=models.InstanceAgentCommandSourceViaTextDetails(text=script),
             output=models.InstanceAgentCommandOutputViaTextDetails(),
         ),
     )
@@ -60,8 +63,13 @@ def fetch_bootstrap_public_key(
         state = str(getattr(execution, "lifecycle_state", "") or "").upper()
         if state == "SUCCEEDED":
             content = getattr(execution, "content", None)
-            return parse_public_key_output(str(getattr(content, "text", "") or ""))
+            return parser(str(getattr(content, "text", "") or ""))
         if state in terminal:
             raise ReconcileError(f"Compute Run Command failed with state {state}")
         _sleep(5)
     raise ReconcileError("Timed out waiting for the VM bootstrap state Run Command")
+
+
+def fetch_bootstrap_public_key(client, oci_module, compartment_id, instance_id, *, attempts=150, create_attempts=60):
+    return fetch_vm_public_output(client, oci_module, compartment_id, instance_id,
+        attempts=attempts, create_attempts=create_attempts)

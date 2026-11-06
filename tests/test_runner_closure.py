@@ -38,4 +38,4 @@ def test_runner_declares_private_assets_without_hook_tokens():
             assert item["download"] == (phase == "post_apply" or item["name"].endswith(".json"))
         assert "release_download_token" not in manifest[phase]["secret_inputs"]
     assert manifest["preflight"]["secret_inputs"] == []
-    assert set(manifest["post_apply"]["secret_inputs"]) == {"tls_certificate", "tls_key"}
+    assert manifest["post_apply"]["secret_inputs"] == []

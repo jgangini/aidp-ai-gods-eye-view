@@ -11,5 +11,5 @@ output "identity_domain_id" { value = var.identity_domain_id }
 output "identity_domain_url" { value = var.identity_domain_url }
 output "gods_eye_view_group_id" { value = oci_identity_domains_group.readers.id }
 output "viewer_oidc_app_name" { value = oci_identity_domains_app.viewer.name }
-output "public_origin" { value = var.public_origin }
+output "public_origin" { value = local.public_origin }
 output "agent_model_id" { value = var.agent_model_id }

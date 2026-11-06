@@ -28,6 +28,16 @@ with zipfile.ZipFile(io.BytesIO(data)) as archive:
     archive.extractall('/opt/gods-eye-view')
 PY
 bash /opt/gods-eye-view/docker/bootstrap.sh prepare
+echo '${host_revision}' > /etc/gods-eye-view/bootstrap/host-revision.sha256
+cat > /usr/local/sbin/gods-eye-view-host-state <<'SH'
+#!/bin/bash
+set -euo pipefail
+read -r digest < /etc/gods-eye-view/bootstrap/host-revision.sha256
+test -f /etc/gods-eye-view/bootstrap/receiver-ready
+[[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+printf 'GODS_EYE_VIEW_HOST_V2 %s\n' "$digest"
+SH
+chmod 0755 /usr/local/sbin/gods-eye-view-host-state
 cat > /usr/local/sbin/gods-eye-view-bootstrap-public-key <<'SH'
 #!/bin/bash
 set -euo pipefail
@@ -38,8 +48,29 @@ else
 fi
 SH
 chmod 0755 /usr/local/sbin/gods-eye-view-bootstrap-public-key
+cat > /usr/local/sbin/gods-eye-view-tls-certificate <<'SH'
+#!/bin/bash
+set -euo pipefail
+openssl x509 -in /etc/gods-eye-view/tls/fullchain.pem -outform PEM
+SH
+chmod 0755 /usr/local/sbin/gods-eye-view-tls-certificate
+cat > /usr/local/sbin/gods-eye-view-active-images <<'SH'
+#!/bin/bash
+set -euo pipefail
+state=/var/lib/gods-eye-view
+read -r receipt < "$state/current-release"
+[[ "$receipt" =~ ^release-[A-Za-z0-9]+$ ]]
+cd "$state/$receipt"
+sha256sum --check receipt.sha256 >/dev/null
+for name in API_IMAGE VIEWER_IMAGE GATEWAY_IMAGE; do
+  value=$(sed -n "s/^$name=//p" release.env)
+  [[ "$value" =~ ^sha256:[a-f0-9]{64}$ ]]
+  printf '%s=%s\n' "$name" "$value"
+done
+SH
+chmod 0755 /usr/local/sbin/gods-eye-view-active-images
 cat > /etc/sudoers.d/gods-eye-view-run-command <<'SUDO'
-ocarun ALL=(root) NOPASSWD: /usr/local/sbin/gods-eye-view-bootstrap-public-key, /bin/bash /opt/gods-eye-view/docker/bootstrap.sh prepare, /bin/bash /opt/gods-eye-view/docker/bootstrap.sh start, /opt/gods-eye-bootstrap/bin/python /opt/gods-eye-view/receive.py
+ocarun ALL=(root) NOPASSWD: /usr/local/sbin/gods-eye-view-bootstrap-public-key, /usr/local/sbin/gods-eye-view-host-state, /usr/local/sbin/gods-eye-view-tls-certificate, /usr/local/sbin/gods-eye-view-active-images, /bin/bash /opt/gods-eye-view/docker/bootstrap.sh prepare, /usr/bin/systemctl start gods-eye-view-receiver.service
 SUDO
 chmod 0440 /etc/sudoers.d/gods-eye-view-run-command
 visudo -cf /etc/sudoers.d/gods-eye-view-run-command
@@ -69,9 +100,25 @@ for attempt in range(360):
         raise SystemExit('Bootstrap object still present; refusing readiness')
     except oci.exceptions.ServiceError as exc:
         if exc.status != 404: raise
+        receipt = root / 'bootstrap/receipt.json'
+        if receipt.exists() and not (root / 'bootstrap/private.pem').exists():
+            if json.loads(receipt.read_text()) != expected:
+                raise SystemExit('Completed receiver belongs to another operator or deployment')
+            break
         time.sleep(5)
 else:
     raise SystemExit('Operator delivery timed out')
 PY
-/opt/gods-eye-bootstrap/bin/python /opt/gods-eye-view/receive.py
-bash /opt/gods-eye-view/docker/bootstrap.sh start
+cat > /etc/systemd/system/gods-eye-view-receiver.service <<'UNIT'
+[Unit]
+Description=Receive and activate the verified God's Eye View deployment
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '/opt/gods-eye-bootstrap/bin/python /opt/gods-eye-view/receive.py && /bin/bash /opt/gods-eye-view/docker/bootstrap.sh start'
+TimeoutStartSec=2100
+UNIT
+systemctl daemon-reload
+touch /etc/gods-eye-view/bootstrap/receiver-ready

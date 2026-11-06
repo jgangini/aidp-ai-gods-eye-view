@@ -77,10 +77,3 @@ variable "source_commit_sha" {
   }
 }
 variable "agent_model_id" { type = string }
-variable "public_origin" {
-  type = string
-  validation {
-    condition     = can(regex("^https://[a-zA-Z0-9.-]+$", var.public_origin))
-    error_message = "An exact HTTPS origin without path is required."
-  }
-}

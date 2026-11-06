@@ -1,3 +1,8 @@
+locals {
+  public_origin = "https://${oci_core_instance.product.public_ip}"
+  host_revision = sha256(join(":", [var.vm_bundle_sha256, filesha256("${path.module}/templatefile/user_data.sh")]))
+}
+
 resource "oci_core_instance" "product" {
   compartment_id      = var.compartment_ocid
   availability_domain = var.availability_domain
@@ -27,6 +32,7 @@ resource "oci_core_instance" "product" {
       bucket               = var.artifacts_bucket_name
       bundle_object        = var.vm_bundle_object
       bundle_sha256        = var.vm_bundle_sha256
+      host_revision        = local.host_revision
       deployment_id        = var.deployment_id
       operator_user_ocid   = var.operator_user_ocid
       operator_fingerprint = var.operator_fingerprint

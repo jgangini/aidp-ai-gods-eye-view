@@ -17,6 +17,7 @@ from preflight import effective_admin, probe, source_context
 from gods_eye_view_bootstrap import bootstrap_gods_eye_view, operation
 from app.config import Settings
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
+from vm_delivery import HostBootstrapMismatch
 
 
 class InstallationJournal:
@@ -140,14 +141,18 @@ def grant_administrator_reader(context, signer):
     asyncio.run(grant())
 
 
+def viewer_ssl_context(certificate):
+    import ssl
+    tls = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    tls.load_verify_locations(cadata=certificate)
+    return tls
+
+
 def wait_viewer_health(origin, certificate, deadline, *, client=None, clock=time.monotonic, sleep=time.sleep):
     import httpx
-    import ssl
     owned = client is None
     if owned:
-        tls = ssl.create_default_context()
-        tls.load_verify_locations(cadata=certificate)
-        client = httpx.Client(verify=tls, follow_redirects=False, timeout=10)
+        client = httpx.Client(verify=viewer_ssl_context(certificate), follow_redirects=False, timeout=10, trust_env=False)
     try:
         while clock() < deadline:
             try:
@@ -210,15 +215,17 @@ def install(context, config, signer, storage, *, secrets=None, api_factory=AidpA
         grant_administrator_reader(context, signer)
         outputs["workspace_key"] = workspace
         from vm_delivery import deliver
-        deliver(context, config, signer, storage, secrets or {})
+        certificate = deliver(context, config, signer, storage)
         result = bootstrap(api, context, outputs, config, signer, storage,
             {"workspace_key": workspace, "catalog_key": managed_catalog["key"], "catalog_name": "oci_medallion"},
             deadline=deadline, ensure_folder=ensure_workspace_folder)
-        wait_viewer_health(outputs["public_origin"], secrets["tls_certificate"], deadline)
+        wait_viewer_health(outputs["public_origin"], certificate["certificate_pem"], deadline)
         journal.save(source_commit_sha=inputs["source_commit_sha"], native=result)
         journal.release("installed_native_conversation_pending")
         return {"outputs": {"workspace_key": workspace, "application_url": outputs["public_origin"] + "/gods-eye-view/",
                 "gods_eye_view_native_status": "installed_conversation_pending",
+                "viewer_certificate_sha256": certificate["fingerprint_sha256"],
+                "viewer_certificate_pem": certificate["certificate_pem"],
                 "gods_eye_view_snapshot_version": result.get("gods_eye_view_snapshot_version", "")},
             "events": [{"level": "success", "message": "AIDP task/publication and viewer TLS health checks passed; agent conversation acceptance remains pending"}]}
     except Exception:
@@ -236,9 +243,11 @@ def main():
         config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
         config = {**config, "region": context["region"]}
         signer = build_signer(config)
-        secrets = json.loads(Path(os.environ["DEPLOY_STUDIO_SECRETS"]).read_text(encoding="utf-8"))["inputs"]
-        result = install(context, config, signer, oci.object_storage.ObjectStorageClient(config, signer=signer), secrets=secrets)
+        result = install(context, config, signer, oci.object_storage.ObjectStorageClient(config, signer=signer))
         code = 0
+    except HostBootstrapMismatch as error:
+        result = {"outputs": {}, "events": [{"level": "error", "message": str(error)}]}
+        code = 1
     except Exception:
         result = {"outputs": {}, "events": [{"level": "error", "message": "Installation stopped; preserve the durable operation receipt and reconcile before Resume"}]}
         code = 1

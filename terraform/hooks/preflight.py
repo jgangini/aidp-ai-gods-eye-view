@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from native_api import AidpApi, assert_operator_platform_admin, build_signer, load_oci_config
+from first_install import vm_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
@@ -91,10 +92,8 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi):
     region = context["region"]
     config = {**config, "region": region}
     signer = build_signer(config)
-    image = oci.core.ComputeClient(config, signer=signer).get_image(values["image_ocid"]).data
-    if image.operating_system != "Oracle Linux" or not str(image.operating_system_version).startswith("9"):
-        raise ValueError("The immutable VM bootstrap requires an Oracle Linux 9 image")
     identity = domain_client or oci.identity.IdentityClient(config, signer=signer)
+    resolved_vm = vm_inputs(context, config, oci.core.ComputeClient(config, signer=signer), identity)
     subscriptions = identity.list_region_subscriptions(config["tenancy"]).data
     home = [item.region_name for item in subscriptions if item.is_home_region]
     if len(home) != 1 or not any(item.region_name == region and item.status == "READY" for item in subscriptions):
@@ -128,7 +127,7 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi):
             api.session.close()
     else:
         verify_administrator(values, {"id": domain.id, "lifecycle_state": domain.lifecycle_state}, users["Resources"][0])
-    return {"inputs": {"medallion_bucket_names": json.dumps(values["medallion_bucket_names"], sort_keys=True),
+    return {"inputs": {**resolved_vm, "medallion_bucket_names": json.dumps(values["medallion_bucket_names"], sort_keys=True),
         "identity_domain_url": endpoint, "home_region": home[0], "operator_user_ocid": config["user"],
         "operator_fingerprint": config["fingerprint"]}, "events": [{"name": "Administrator authorization",
         "status": "passed", "message": "Domain identity verified; effective AIDP roles " + ("verified" if api else "require post-bootstrap verification")} ]}

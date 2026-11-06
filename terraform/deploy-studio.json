@@ -157,58 +157,10 @@
         "required": true
       },
       {
-        "name": "public_origin",
-        "label": "Viewer HTTPS origin",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "availability_domain",
-        "label": "VM availability domain",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "image_ocid",
-        "label": "Oracle Linux image OCID",
-        "type": "text",
-        "required": true
-      },
-      {
         "name": "agent_model_id",
         "label": "OCI agent model ID",
         "type": "text",
         "required": true
-      },
-      {
-        "name": "vm_bundle_object",
-        "label": "Immutable VM bootstrap object path",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "vm_bundle_sha256",
-        "label": "VM bootstrap SHA-256",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "tls_certificate",
-        "label": "TLS certificate PEM",
-        "type": "password",
-        "required": true,
-        "secret": true,
-        "transform": "none",
-        "max_length": 4096
-      },
-      {
-        "name": "tls_key",
-        "label": "TLS private key PEM",
-        "type": "password",
-        "required": true,
-        "secret": true,
-        "transform": "none",
-        "max_length": 4096
       },
       {
         "name": "release_tag",
@@ -228,7 +180,9 @@
     "workspace_key",
     "application_url",
     "gods_eye_view_native_status",
-    "gods_eye_view_snapshot_version"
+    "gods_eye_view_snapshot_version",
+    "viewer_certificate_sha256",
+    "viewer_certificate_pem"
   ],
   "preflight": {
     "entrypoint": "terraform/hooks/preflight.py",
@@ -239,7 +193,11 @@
       "home_region",
       "operator_user_ocid",
       "operator_fingerprint",
-      "medallion_bucket_names"
+      "medallion_bucket_names",
+      "image_ocid",
+      "availability_domain",
+      "vm_bundle_object",
+      "vm_bundle_sha256"
     ],
     "runtime_fields": [
       {
@@ -269,6 +227,30 @@
       {
         "name": "medallion_bucket_names",
         "label": "Verified medallion bucket bindings",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "image_ocid",
+        "label": "Verified image ocid",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "availability_domain",
+        "label": "Verified availability domain",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "vm_bundle_object",
+        "label": "Verified vm bundle object",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "vm_bundle_sha256",
+        "label": "Verified vm bundle sha256",
         "type": "text",
         "required": true
       }
@@ -330,10 +312,7 @@
       "docker/bootstrap.sh",
       "docker/compose.yml"
     ],
-    "secret_inputs": [
-      "tls_certificate",
-      "tls_key"
-    ],
+    "secret_inputs": [],
     "release_assets": [
       {
         "name": "gods-eye-view-api-release.json",

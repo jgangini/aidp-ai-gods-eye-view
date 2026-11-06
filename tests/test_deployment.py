@@ -79,7 +79,7 @@ def test_envelope_is_bound_authenticated_and_single_use(tmp_path):
     public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
     payload = {"config": f"[DEFAULT]\nuser=ocid1.user.oc1..operator\nfingerprint={fingerprint}\n",
         "key": operator.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode(),
-        "runtime_env": "GODS_EYE_VIEW_MODE=oci\n", "tls_certificate": "test-certificate", "tls_key": "test-key",
+        "runtime_env": "GODS_EYE_VIEW_MODE=oci\nPUBLIC_HOST=127.0.0.1\n",
         "image_assets": json.dumps([{"component": component, "object_name": "releases/" + "a" * 40 + "/" + prefix + "-image-amd64.tar.gz",
             "archive_sha256": "b" * 64, "image_id": "sha256:" + "c" * 64, "image_tag": prefix + ":" + "a" * 40}
             for component, prefix in (("api", "gods-eye-view-api"), ("viewer", "gods-eye-view"), ("gateway", "gods-eye-view-gateway"))])}
@@ -93,15 +93,205 @@ def test_envelope_is_bound_authenticated_and_single_use(tmp_path):
         envelope.consume(json.dumps(tampered).encode(), tmp_path, expected)
     envelope.consume(encrypted, tmp_path, expected)
     assert (tmp_path / "oci/config").read_text().find("/etc/gods-eye-view/oci/key.pem") >= 0
+    tls_key = (tmp_path / "tls/privkey.pem").read_bytes()
+    tls_certificate = (tmp_path / "tls/fullchain.pem").read_bytes()
     assert not (tmp_path / "bootstrap/private.pem").exists()
     with pytest.raises(FileNotFoundError):
         envelope.consume(encrypted, tmp_path, expected)
     updated_public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
-    changed = envelope.encrypt(updated_public, {**payload, "tls_key": "different-key"}, expected)
-    with pytest.raises(ValueError, match="separate authorized recovery"):
+    changed = envelope.encrypt(updated_public, {**payload, "runtime_env": "GODS_EYE_VIEW_MODE=oci\nPUBLIC_HOST=127.0.0.2\n"}, expected)
+    with pytest.raises(ValueError, match="recovery"):
         envelope.consume(changed, tmp_path, expected)
-    assert (tmp_path / "tls/privkey.pem").read_text() == "test-key"
+    assert (tmp_path / "tls/privkey.pem").read_bytes() == tls_key
+    assert (tmp_path / "tls/fullchain.pem").read_bytes() == tls_certificate
+    assert (tmp_path / "runtime.env").read_text() == payload["runtime_env"]
     assert (tmp_path / "bootstrap/private.pem").exists()
+
+
+def _auto_tls_envelope(tmp_path):
+    import hashlib
+    operator = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    fingerprint = hashlib.md5(operator.public_key().public_bytes(serialization.Encoding.DER,
+        serialization.PublicFormat.SubjectPublicKeyInfo), usedforsecurity=False).hexdigest()
+    expected = envelope.binding("automatic-tls-test", "ocid1.user.oc1..operator", fingerprint)
+    public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
+    payload = {"config": f"[DEFAULT]\nuser=ocid1.user.oc1..operator\nfingerprint={fingerprint}\n",
+        "key": operator.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption()).decode(),
+        "runtime_env": "GODS_EYE_VIEW_MODE=oci\nPUBLIC_HOST=127.0.0.1\n",
+        "image_assets": json.dumps([{"component":component,
+            "object_name":"releases/" + "a" * 40 + "/" + prefix + "-image-amd64.tar.gz",
+            "archive_sha256":"b" * 64,"image_id":"sha256:" + "c" * 64,"image_tag":prefix + ":" + "a" * 40}
+            for component,prefix in (("api","gods-eye-view-api"),("viewer","gods-eye-view"),("gateway","gods-eye-view-gateway"))])}
+    return public,payload,expected
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "2001:db8::123"])
+def test_automatic_viewer_tls_is_ip_bound_non_ca_server_certificate_and_retained(tmp_path, host):
+    import hashlib
+    import ipaddress
+    from datetime import datetime, timedelta, timezone
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.x509.oid import ExtendedKeyUsageOID
+    before = datetime.now(timezone.utc)
+    result = envelope.ensure_viewer_tls(tmp_path,host)
+    certificate_path, key_path = tmp_path / "tls/fullchain.pem", tmp_path / "tls/privkey.pem"
+    certificate = x509.load_pem_x509_certificate(result["certificate_pem"].encode())
+    private_bytes = key_path.read_bytes()
+    key = serialization.load_pem_private_key(private_bytes,password=None)
+    assert isinstance(key,rsa.RSAPrivateKey) and key.key_size >= 3072
+    assert certificate.public_key().public_numbers() == key.public_key().public_numbers()
+    assert certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.IPAddress) == [ipaddress.ip_address(host)]
+    assert list(certificate.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value) == [ExtendedKeyUsageOID.SERVER_AUTH]
+    constraints = certificate.extensions.get_extension_for_class(x509.BasicConstraints)
+    assert constraints.critical and not constraints.value.ca and constraints.value.path_length is None
+    assert before - timedelta(minutes=6) < certificate.not_valid_before_utc <= before
+    assert before + timedelta(days=364) < certificate.not_valid_after_utc <= datetime.now(timezone.utc) + timedelta(days=365)
+    assert result["fingerprint_sha256"] == hashlib.sha256(certificate.public_bytes(serialization.Encoding.DER)).hexdigest()
+    certificate.verify_directly_issued_by(certificate)
+    stat_before = certificate_path.stat().st_mtime_ns,key_path.stat().st_mtime_ns
+    assert envelope.ensure_viewer_tls(tmp_path,host) == result
+    assert key_path.read_bytes() == private_bytes
+    assert (certificate_path.stat().st_mtime_ns,key_path.stat().st_mtime_ns) == stat_before
+    assert set(result) == {"certificate_pem","fingerprint_sha256"}
+    assert "PRIVATE KEY" not in json.dumps(result)
+
+
+def test_generated_viewer_tls_uses_private_atomic_files(tmp_path, monkeypatch):
+    import os
+    import stat
+    modes = []
+    original = envelope.os.open
+    def opened(path,flags,mode=0o777,*args,**kwargs):
+        if str(path).endswith(".pending"):
+            modes.append(mode)
+        return original(path,flags,mode,*args,**kwargs)
+    monkeypatch.setattr(envelope.os,"open",opened)
+    envelope.ensure_viewer_tls(tmp_path,"127.0.0.1")
+    assert modes == [0o600,0o600]
+    if os.name != "nt":
+        for name in ("fullchain.pem","privkey.pem"):
+            assert stat.S_IMODE((tmp_path / "tls" / name).stat().st_mode) == 0o600
+
+
+@pytest.mark.parametrize("host", ["example.com", "https://127.0.0.1", "127.0.0.1:443", "", " 127.0.0.1",
+    "0.0.0.0", "::", "224.0.0.1", "fe80::1%eth0", None])
+def test_bad_viewer_tls_host_creates_no_files(tmp_path, host):
+    with pytest.raises(ValueError,match="PUBLIC_HOST"):
+        envelope.ensure_viewer_tls(tmp_path,host)
+    assert not (tmp_path / "tls").exists()
+
+
+@pytest.mark.parametrize("kind", ["partial", "wrong-key", "wrong-host", "expired", "extra-private-material"])
+def test_existing_tls_partial_mismatch_and_expiry_require_recovery_without_rotation(tmp_path, kind):
+    from datetime import datetime, timedelta, timezone
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes
+    envelope.ensure_viewer_tls(tmp_path,"127.0.0.1")
+    certificate_path,key_path = tmp_path / "tls/fullchain.pem", tmp_path / "tls/privkey.pem"
+    host = "127.0.0.1"
+    if kind == "partial":
+        certificate_path.unlink()
+    elif kind == "wrong-key":
+        other = rsa.generate_private_key(public_exponent=65537,key_size=3072)
+        key_path.write_bytes(other.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()))
+    elif kind == "wrong-host":
+        host = "127.0.0.2"
+    elif kind == "extra-private-material":
+        certificate_path.write_bytes(certificate_path.read_bytes()+key_path.read_bytes())
+    else:
+        original = x509.load_pem_x509_certificate(certificate_path.read_bytes())
+        key = serialization.load_pem_private_key(key_path.read_bytes(),password=None)
+        now = datetime.now(timezone.utc)
+        builder = (x509.CertificateBuilder().subject_name(original.subject).issuer_name(original.issuer)
+            .public_key(key.public_key()).serial_number(x509.random_serial_number())
+            .not_valid_before(now-timedelta(days=2)).not_valid_after(now-timedelta(days=1)))
+        for extension in original.extensions:
+            builder = builder.add_extension(extension.value,extension.critical)
+        certificate_path.write_bytes(builder.sign(key,hashes.SHA256()).public_bytes(serialization.Encoding.PEM))
+    before = {path.name:path.read_bytes() for path in (certificate_path,key_path) if path.exists()}
+    with pytest.raises(ValueError,match="recovery"):
+        envelope.ensure_viewer_tls(tmp_path,host)
+    assert {path.name:path.read_bytes() for path in (certificate_path,key_path) if path.exists()} == before
+
+
+@pytest.mark.parametrize("change", ["operator", "profile", "assets", "extra", "external-tls-fields", "unknown-field", "missing-host", "duplicate-host", "invalid-host"])
+def test_invalid_automatic_tls_payload_never_overwrites_credentials_or_environment(tmp_path, change):
+    public,payload,expected = _auto_tls_envelope(tmp_path)
+    (tmp_path / "runtime.env").write_text("existing environment")
+    if change == "operator":
+        key = rsa.generate_private_key(public_exponent=65537,key_size=2048)
+        payload["key"] = key.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()).decode()
+    elif change == "profile": payload["config"] = payload["config"].replace("..operator","..other")
+    elif change == "assets": payload["image_assets"] = "[]"
+    elif change == "extra": payload["tls_key"] = "unexpected key"
+    elif change == "external-tls-fields": payload.update(tls_certificate="external certificate",tls_key="external key")
+    elif change == "unknown-field": payload["unrecognized_field"] = "not accepted"
+    elif change == "missing-host": payload["runtime_env"] = "GODS_EYE_VIEW_MODE=oci\n"
+    elif change == "duplicate-host": payload["runtime_env"] += "PUBLIC_HOST=127.0.0.2\n"
+    else: payload["runtime_env"] = "PUBLIC_HOST=external.example\n"
+    with pytest.raises(ValueError):
+        envelope.consume(envelope.encrypt(public,payload,expected),tmp_path,expected)
+    assert (tmp_path / "runtime.env").read_text() == "existing environment"
+    assert not (tmp_path / "oci").exists() and not (tmp_path / "tls").exists()
+    assert (tmp_path / "bootstrap/private.pem").exists()
+
+
+def test_automatic_tls_consume_resume_keeps_key_and_rejects_host_or_signer_rotation(tmp_path):
+    public,payload,expected = _auto_tls_envelope(tmp_path)
+    envelope.consume(envelope.encrypt(public,payload,expected),tmp_path,expected)
+    cert = (tmp_path / "tls/fullchain.pem").read_bytes()
+    private = (tmp_path / "tls/privkey.pem").read_bytes()
+    public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
+    updated = {**payload,"runtime_env":payload["runtime_env"]+"UPDATED_SETTING=yes\n"}
+    envelope.consume(envelope.encrypt(public,updated,expected),tmp_path,expected,finalize=False)
+    assert (tmp_path / "tls/fullchain.pem").read_bytes() == cert and (tmp_path / "tls/privkey.pem").read_bytes() == private
+    with pytest.raises(ValueError,match="recovery"):
+        envelope.consume(envelope.encrypt(public,{**updated,"runtime_env":"PUBLIC_HOST=127.0.0.2\n"},expected),tmp_path,expected)
+    assert (tmp_path / "runtime.env").read_text() == updated["runtime_env"]
+    different = {**expected,"operator_user_ocid":"ocid1.user.oc1..different"}
+    with pytest.raises(ValueError,match="Operator rotation"):
+        envelope.consume(envelope.encrypt(public,updated,different),tmp_path,different)
+    assert (tmp_path / "tls/privkey.pem").read_bytes() == private
+
+
+def test_pinned_local_ssl_trust_accepts_the_generated_non_ca_leaf(tmp_path):
+    import hashlib
+    import socket
+    import ssl
+    import threading
+    result = envelope.ensure_viewer_tls(tmp_path,"127.0.0.1")
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(tmp_path / "tls/fullchain.pem",tmp_path / "tls/privkey.pem")
+    listener = socket.socket()
+    listener.bind(("127.0.0.1",0))
+    listener.listen(1)
+    listener.settimeout(5)
+    address = listener.getsockname()
+    errors = []
+    def serve():
+        try:
+            connection,_ = listener.accept()
+            connection.settimeout(5)
+            with server_context.wrap_socket(connection,server_side=True) as channel:
+                assert channel.recv(1) == b"x"
+                channel.sendall(b"y")
+        except Exception as error:
+            errors.append(error)
+    thread = threading.Thread(target=serve,daemon=True)
+    thread.start()
+    try:
+        context = ssl.create_default_context(cadata=result["certificate_pem"])
+        with socket.create_connection(address,timeout=5) as raw:
+            with context.wrap_socket(raw,server_hostname="127.0.0.1") as channel:
+                assert hashlib.sha256(channel.getpeercert(binary_form=True)).hexdigest() == result["fingerprint_sha256"]
+                channel.sendall(b"x")
+                assert channel.recv(1) == b"y"
+    finally:
+        listener.close()
+        thread.join(timeout=6)
+    assert not thread.is_alive() and errors == []
 
 
 class Store:

@@ -15,6 +15,6 @@ resource "oci_identity_domains_app" "viewer" {
   is_oauth_client = true
   client_type     = "public"
   allowed_grants  = ["authorization_code"]
-  redirect_uris   = ["${var.public_origin}/api/auth/oci/callback"]
+  redirect_uris   = ["${local.public_origin}/api/auth/oci/callback"]
   lifecycle { ignore_changes = [schemas] }
 }

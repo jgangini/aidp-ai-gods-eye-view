@@ -1,4 +1,7 @@
 mock_provider "oci" {
+  mock_resource "oci_core_instance" {
+    defaults = { public_ip = "198.51.100.10" }
+  }
   mock_data "oci_ai_data_platform_ai_data_platform" {
     defaults = { state = "ACTIVE" }
   }
@@ -20,7 +23,6 @@ variables {
   image_ocid             = "ocid1.image.oc1..test"
   aidp_mode              = "new"
   agent_model_id         = "test-model"
-  public_origin          = "https://viewer.example.com"
   source_commit_sha      = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   vm_bundle_object       = "releases/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/vm.zip"
   vm_bundle_sha256       = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -57,5 +59,12 @@ run "existing_platform_external" {
   assert {
     condition     = output.ai_data_platform_id == "ocid1.aidataplatform.oc1..external"
     error_message = "Do not replace or adopt the selected external identity."
+  }
+}
+run "first_bootstrap_ip_origin" {
+  command = apply
+  assert {
+    condition     = output.public_origin == "https://198.51.100.10" && contains(oci_identity_domains_app.viewer.redirect_uris, "https://198.51.100.10/api/auth/oci/callback")
+    error_message = "OIDC callback and viewer origin must follow the allocated VM IP, without a user-supplied domain."
   }
 }
