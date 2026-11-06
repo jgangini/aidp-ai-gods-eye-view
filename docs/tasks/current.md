@@ -2,13 +2,13 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
-## Candidato de cinco buckets independientes v2.1.0
+## Cinco buckets independientes v2.1.0 publicado
 
 Fuente `ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42272619772](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42272619772) con seis jobs aprobados. Artifacts y las cuatro capas Medallion tienen modos new/existing independientes, textbox nuevo y selector OCI; no hay control global ni fallback. Se conservan direcciones Terraform y `prevent_destroy`, se verifica región/compartimento y se comparan nombres/modos contra outputs antes del journal. El acceso sigue por OCI OIDC y OCI Run Command, sin cuenta local ni credenciales SSH nuevas.
 
 Postflight: 1948 passed, seis skips y ocho mocks Terraform aprobados. Sentrux sigue DEGRADED, con calidad 6610→6620; Graphify existente actualizado a 3993 nodos/11388 aristas y wiki renovada, con límite HCL documentado. El coordinador reportó parser estricto y SSR all-new/all-existing aprobados, ocho grupos y 23 campos. [Evidencia completa](../evidence/individual-bucket-ownership.md).
 
-Borrador ID `436861738`, seis assets verificados y handoff/CAS simulado aprobado. No hubo intento de publicación desde este chat. El coordinador asumió la operación y reportó un rechazo real de auto_review al publicar v2.1.0/marcar latest: la autorización reconocida cubre solo v2.0.1. El comando no se ejecutó; el coordinador ya solicitó aprobación específica al usuario. El [recibo](../releases/v2.1.0-candidate.json) fija el paquete intacto pendiente de esa respuesta. Sin OCI ni recursos compartidos modificados.
+La [release v2.1.0](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.1.0), ID `436861738`, fue publicada por el coordinador tras la aprobación explícita del usuario. API y tag confirman `draft=false`, `immutable=true`, latest y commit `ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33`; acceso API anónimo HTTP 200 y los seis IDs, tamaños y hashes verificados sin cambios. El [recibo publicado](../releases/v2.1.0-candidate.json) conserva su nombre original y el antecedente del rechazo inicial, ya resuelto con esa aprobación. Handoff/CAS simulado aprobado; aceptación Browser/OCI a cargo del coordinador. Desde este chat no se modificaron OCI ni recursos compartidos.
 
 ## Formulario alineado con Governance v2.0.1 publicado
 

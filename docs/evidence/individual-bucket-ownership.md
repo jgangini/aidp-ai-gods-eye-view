@@ -1,4 +1,4 @@
-# Cinco modos de bucket: candidato v2.1.0
+# Cinco modos de bucket: v2.1.0 publicada
 
 Fuente `ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42272619772](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42272619772). El contrato vigente está en [Instalación e identidad](../contracts.md), con recuperación en [Operación](../operations.md).
 
@@ -22,12 +22,12 @@ El visor sigue usando OIDC de OCI Identity Domains, con el administrador selecci
 - Sentrux: preflight 6610, postflight 6620, coupling 0,07, 104 funciones complejas, cero ciclos/god files. Sigue DEGRADED frente al baseline inicial 7780 conservado. No hay reglas propias; no se declara aprobado el gate global.
 - Graphify existente actualizado y wiki exportada: **3993 nodos, 11388 aristas, 171 comunidades y 181 artículos**, sin endpoints colgantes; fuente `ca0c4a5d`, cero tokens LLM. La extracción paralela falló con WinError 5 y la herramienta completó secuencialmente. Falta `tree_sitter_hcl`, por lo que HCL no aporta símbolos; su comportamiento se comprobó con Terraform. No se inicializó otro grafo, generó visualización ni incluyó archivos locales Graphify en el commit del producto.
 
-## Assets y gate de publicación
+## Assets y publicación
 
-El [borrador v2.1.0](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-cc7c0f93c35593fa008c), ID `436861738`, tiene seis assets ligados al SHA de fuente anterior. IDs, tamaños y SHA-256 remotos coinciden con el paquete de CI/promoción. El [recibo del candidato](../releases/v2.1.0-candidate.json) conserva los valores exactos. El handoff pasó con Artifacts existente y Medallion nuevo, desde inputs sin tag/prefijo operativos; también pasó la comparación contra outputs. CAS simulado hizo tres cargas iniciales y ninguna al repetir, sin OCI.
+La [release v2.1.0](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.1.0), ID `436861738`, tiene seis assets ligados al SHA de fuente anterior. IDs, tamaños y SHA-256 remotos coinciden con el paquete de CI/promoción. El [recibo publicado](../releases/v2.1.0-candidate.json) conserva su nombre de archivo original y los valores exactos. El handoff pasó con Artifacts existente y Medallion nuevo, desde inputs sin tag/prefijo operativos; también pasó la comparación contra outputs. CAS simulado hizo tres cargas iniciales y ninguna al repetir, sin OCI.
 
 Se inspeccionaron estáticamente tres imágenes, 34 capas únicas, 80.909 archivos y 1.565.695.178 bytes, incluidas capas históricas, sin ejecutarlas. Los 68 archivos con coincidencias conocidas conservaron su hash. Seis candidatos `.pyc` nuevos conservan sus payloads compilados; solo varían los encabezados de 16 bytes. No se imprimieron valores candidatos. Las seis releases anteriores mantuvieron IDs, assets, tamaños, hashes e inmutabilidad.
 
-**La candidata sigue como draft, sin publicación ni inmutabilidad todavía.** Desde este chat no se intentó publicarla. Después de asumir esa operación, el coordinador reportó un intento exacto rechazado realmente por auto_review: la autorización registrada cubre v2.0.1, y se exige aprobación específica para v2.1.0 y marcarla como latest. El comando no se ejecutó. El coordinador ya presentó la pregunta concreta al usuario y retomará tras su respuesta; no se reintentó ni se cambió el paquete.
+El coordinador publicó el paquete tras la aprobación explícita del usuario «Sí, publicar v2.1.0». API y tag confirman `draft=false`, `immutable=true`, latest y commit `ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33`; el acceso API anónimo respondió HTTP 200. Los seis IDs, tamaños y hashes permanecen iguales. El recibo conserva como antecedente el rechazo inicial de auto_review por falta de aprobación específica; esa aprobación ya se recibió y no queda pendiente. Desde este chat solo se verificó la publicación, sin cambiar el paquete.
 
 La publicación no acredita aceptación OCI ni conversación del agente. Persisten el gate Sentrux no aprobado y los [avisos de dependencias heredados](native-dependency-review.md). No se realizaron migraciones, adopciones, retiradas de state ni operaciones sobre recursos compartidos.

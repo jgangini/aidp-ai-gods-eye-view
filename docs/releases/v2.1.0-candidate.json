@@ -1,14 +1,12 @@
 {
   "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
-  "proposed_tag": "v2.1.0",
   "commit": "ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
   "release_id": 436861738,
-  "draft_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-cc7c0f93c35593fa008c",
-  "draft": true,
-  "immutable": false,
+  "draft": false,
+  "immutable": true,
   "prerelease": false,
-  "published": false,
-  "publication_status": "Blocked: coordinator reported an actual auto_review rejection of v2.1.0 publication/latest; authorization on record covers v2.0.1 only",
+  "published": true,
+  "publication_status": "Published by coordinator after explicit user approval; latest, tag and six asset IDs, sizes and SHA-256 verified",
   "assets": {
     "gods-eye-view-api-image-amd64.tar.gz": {
       "asset_id": 718170438,
@@ -197,13 +195,23 @@
     "local_username_password": false,
     "ssh_credentials_added": false
   },
+  "tag": "v2.1.0",
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.1.0",
   "publication_review": {
-    "source": "Coordinator report",
-    "attempt_from_this_chat": false,
-    "attempted_by_coordinator": true,
-    "command_executed": false,
-    "release_published": false,
-    "reason": "Specific approval required for v2.1.0 and marking it latest; recorded approval covers v2.0.1 only",
-    "approval_question_pending_in_coordinator": true
-  }
+    "initial_rejected_attempt": {
+      "source": "Coordinator report",
+      "attempt_from_this_chat": false,
+      "attempted_by_coordinator": true,
+      "command_executed": false,
+      "release_published": false,
+      "reason": "Specific approval required for v2.1.0 and marking it latest; recorded approval covers v2.0.1 only"
+    },
+    "user_explicit_approval_confirmed_by_coordinator": true,
+    "publication_completed_by": "coordinator",
+    "approval_question_pending": false
+  },
+  "latest": true,
+  "published_at": "2026-11-06T18:58:50Z",
+  "tag_commit_sha": "ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+  "public_anonymous_api_verified": true
 }
