@@ -1,6 +1,7 @@
 locals {
-  platform_id = var.aidp_mode == "new" ? oci_ai_data_platform_ai_data_platform.product[0].id : var.existing_ai_data_platform_ocid
-  buckets     = merge(jsondecode(var.medallion_bucket_names), { artifacts = var.artifacts_bucket_name })
+  platform_id  = var.aidp_mode == "new" ? oci_ai_data_platform_ai_data_platform.product[0].id : var.existing_ai_data_platform_ocid
+  buckets      = merge(jsondecode(var.medallion_bucket_names), { artifacts = var.artifacts_bucket_name })
+  bucket_modes = jsondecode(var.bucket_modes)
 }
 resource "oci_ai_data_platform_ai_data_platform" "product" {
   depends_on             = [time_sleep.aidp_iam_propagation]
@@ -25,7 +26,7 @@ data "oci_ai_data_platform_ai_data_platform" "existing" {
 }
 data "oci_objectstorage_namespace" "product" { compartment_id = var.compartment_ocid }
 resource "oci_objectstorage_bucket" "product" {
-  for_each       = var.create_buckets ? local.buckets : {}
+  for_each       = { for layer, name in local.buckets : layer => name if local.bucket_modes[layer] == "new" }
   compartment_id = var.compartment_ocid
   namespace      = data.oci_objectstorage_namespace.product.namespace
   name           = each.value

@@ -3,6 +3,7 @@ output "existing_workspace_key" { value = var.existing_workspace_key }
 output "default_workspace_name" { value = "${var.name}-workspace" }
 output "objectstorage_namespace" { value = data.oci_objectstorage_namespace.product.namespace }
 output "medallion_bucket_names" { value = jsondecode(var.medallion_bucket_names) }
+output "bucket_modes" { value = local.bucket_modes }
 output "artifacts_bucket_name" { value = var.artifacts_bucket_name }
 output "compartment_ocid" { value = var.compartment_ocid }
 output "instance_id" { value = oci_core_instance.product.id }

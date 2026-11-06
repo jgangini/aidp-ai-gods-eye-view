@@ -43,11 +43,23 @@ def test_form_uses_governance_groups_selectors_and_internal_installation_inputs(
         "credentials", "services", "identity", "aidp_platform", "enterprise_ai", "artifacts", "medallion", "additional_resources"]
     fields = {field["name"]: field for field in manifest["form"]["fields"]}
     assert {field["type"] for field in fields.values()} <= {"text", "select"}
-    assert not {"name", "release_tag"} & fields.keys()
+    assert not {"name", "release_tag", "create_buckets", "admin_username", "admin_password"} & fields.keys()
     assert fields["new_aidp_name"]["default"] == "aidp_gods_eye_view"
     assert fields["new_aidp_name"]["visible_when"] == {"field": "aidp_mode", "equals": "new"}
-    assert fields["create_buckets"]["default"] == "true"
-    assert [option["value"] for option in fields["create_buckets"]["options"]] == ["true", "false"]
+    for layer in ("artifacts", "landing", "bronze", "silver", "gold"):
+        mode = "artifacts_mode" if layer == "artifacts" else layer + "_bucket_mode"
+        new = "artifacts_bucket_name" if layer == "artifacts" else layer + "_new_bucket_name"
+        existing = layer + "_existing_bucket_name"
+        assert fields[mode]["default"] == "new"
+        assert fields[mode]["options"] == [{"value": "new", "label": "Create new bucket"}, {"value": "existing", "label": "Use existing bucket"}]
+        assert fields[new]["type"] == "text" and fields[new]["default"] == "oci_" + layer
+        assert fields[new]["visible_when"] == {"field": mode, "equals": "new"}
+        assert fields[existing]["options_source"] == "oci_active_buckets" and fields[existing]["default"] == "oci_" + layer
+        assert fields[existing]["visible_when"] == {"field": mode, "equals": "existing"}
+    medallion = next(group for group in manifest["form"]["groups"] if group["id"] == "medallion")
+    assert medallion["title"] == "Medallion Architecture"
+    assert [item["name"] for item in medallion["items"]] == [name for layer in ("landing", "bronze", "silver", "gold")
+        for name in (layer + "_bucket_mode", layer + "_new_bucket_name", layer + "_existing_bucket_name")]
     for name, source in (("existing_ai_data_platform_ocid", "oci_aidp_platforms"),
             ("existing_workspace_key", "oci_aidp_workspaces"), ("agent_model_id", "oci_genai_chat_models")):
         assert fields[name]["options_source"] == source
@@ -55,6 +67,7 @@ def test_form_uses_governance_groups_selectors_and_internal_installation_inputs(
     runtime = {field["name"]: field for field in manifest["preflight"]["runtime_fields"]}
     assert runtime["name"]["default"] == "aidp-gods-eye-view"
     assert "name" in manifest["preflight"]["output_inputs"]
+    assert {"bucket_modes", "artifacts_bucket_name"} <= set(manifest["preflight"]["output_inputs"])
     presentation = manifest["presentation"]
     assert presentation["image"] == "/assets/oci-aidp-cloud-migration-lab.png" and presentation["image_alt"]
     assert "https://github.com/bilawalsidhu/gods-eye-view" in presentation["summary"]

@@ -8,7 +8,11 @@ El operador autorizado firma las peticiones OCI. El administrador elegido median
 
 `aidp_mode=new` crea la plataforma y utiliza su workspace predeterminado; el post-apply verifica la asignación administrativa del seleccionado. `aidp_mode=existing` conserva la plataforma y el workspace indicados mediante sus claves exactas. Un catálogo externo se selecciona con `existing_catalog_key`; la coincidencia de un nombre no autoriza una adopción.
 
-Los cinco buckets son distintos. Al compartirlos con otros productos, utilizar sus nombres, región y namespace reales y `create_buckets=false`. Conservar los recursos externos y sus permisos: cambiar este repositorio o ejecutar una actualización no transfiere Terraform state ni convierte esos recursos en propiedad de otra instalación. La VM tiene protección `prevent_destroy`; una sustitución o retirada exige una operación explícita y revisión de los datos e identidades que deben permanecer.
+Los cinco buckets son distintos y tienen modos new/existing independientes. Artifacts no controla Medallion. Para compartir alguno con otros productos, seleccionar su modo existing y su nombre exacto en el selector OCI. Debe ser accesible en la región seleccionada y pertenecer al compartimento del despliegue; los guards previos a APPLY y al journal rechazan ubicaciones incompatibles. La política de bootstrap conserva ese ámbito, sin ampliación al tenancy.
+
+Terraform mantiene las direcciones `oci_objectstorage_bucket.product["landing"|"bronze"|"silver"|"gold"|"artifacts"]` de los creados, con `prevent_destroy`; los existentes quedan fuera del ownership Terraform de esta instalación. Cambiar un bucket gestionado a existing no es una transferencia de ownership: el plan debe bloquear su retirada. El contrato actual exige los cinco modos y no acepta el parámetro global `create_buckets`; las releases anteriores conservan sus contratos inmutables. No hay migración, adopción ni retirada automática de state.
+
+Cambiar Artifacts después de instalar tampoco es una migración admitida por el selector: contiene recibos, bundles y entrega del operador, y la VM conserva su `user_data`. Mantener su identidad en Resume. Toda migración de almacenamiento requiere reconciliación explícita de recursos y datos. La VM también conserva `prevent_destroy`.
 
 ## Reintentos y Resume
 

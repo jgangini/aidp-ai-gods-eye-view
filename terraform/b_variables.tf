@@ -67,9 +67,16 @@ variable "medallion_bucket_names" {
   }
 }
 variable "artifacts_bucket_name" { type = string }
-variable "create_buckets" {
-  type    = bool
-  default = true
+variable "bucket_modes" {
+  type = string
+  validation {
+    condition = try(
+      toset(keys(jsondecode(var.bucket_modes))) == toset(["landing", "bronze", "silver", "gold", "artifacts"]) &&
+      alltrue([for mode in values(jsondecode(var.bucket_modes)) : contains(["new", "existing"], mode)]),
+      false
+    )
+    error_message = "Select new or existing independently for all five buckets."
+  }
 }
 variable "availability_domain" { type = string }
 variable "image_ocid" { type = string }

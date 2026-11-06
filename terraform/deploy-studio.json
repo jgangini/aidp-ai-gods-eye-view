@@ -143,56 +143,248 @@
         "group": "enterprise_ai"
       },
       {
-        "name": "create_buckets",
-        "label": "Bucket mode",
+        "name": "artifacts_mode",
+        "label": "Artifacts bucket mode",
         "type": "select",
         "required": true,
-        "default": "true",
+        "default": "new",
         "options": [
           {
-            "value": "true",
-            "label": "Create the five buckets"
+            "value": "new",
+            "label": "Create new bucket"
           },
           {
-            "value": "false",
-            "label": "Use existing buckets"
+            "value": "existing",
+            "label": "Use existing bucket"
           }
         ],
         "group": "artifacts"
       },
       {
         "name": "artifacts_bucket_name",
-        "label": "Artifacts bucket name",
+        "label": "New artifacts bucket name",
         "type": "text",
         "required": true,
+        "default": "oci_artifacts",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "artifacts_mode",
+          "equals": "new"
+        },
         "group": "artifacts"
       },
       {
-        "name": "landing_bucket_name",
-        "label": "Landing bucket name",
-        "type": "text",
+        "name": "artifacts_existing_bucket_name",
+        "label": "Existing artifacts bucket",
+        "type": "select",
         "required": true,
+        "default": "oci_artifacts",
+        "options_source": "oci_active_buckets",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "artifacts_mode",
+          "equals": "existing"
+        },
+        "group": "artifacts"
+      },
+      {
+        "name": "landing_bucket_mode",
+        "label": "Landing bucket mode",
+        "type": "select",
+        "required": true,
+        "default": "new",
+        "options": [
+          {
+            "value": "new",
+            "label": "Create new bucket"
+          },
+          {
+            "value": "existing",
+            "label": "Use existing bucket"
+          }
+        ],
         "group": "medallion"
       },
       {
-        "name": "bronze_bucket_name",
-        "label": "Bronze bucket name",
+        "name": "landing_new_bucket_name",
+        "label": "New landing bucket name",
         "type": "text",
         "required": true,
+        "default": "oci_landing",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "landing_bucket_mode",
+          "equals": "new"
+        },
         "group": "medallion"
       },
       {
-        "name": "silver_bucket_name",
-        "label": "Silver bucket name",
-        "type": "text",
+        "name": "landing_existing_bucket_name",
+        "label": "Existing landing bucket",
+        "type": "select",
         "required": true,
+        "default": "oci_landing",
+        "options_source": "oci_active_buckets",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "landing_bucket_mode",
+          "equals": "existing"
+        },
         "group": "medallion"
       },
       {
-        "name": "gold_bucket_name",
-        "label": "Gold bucket name",
+        "name": "bronze_bucket_mode",
+        "label": "Bronze bucket mode",
+        "type": "select",
+        "required": true,
+        "default": "new",
+        "options": [
+          {
+            "value": "new",
+            "label": "Create new bucket"
+          },
+          {
+            "value": "existing",
+            "label": "Use existing bucket"
+          }
+        ],
+        "group": "medallion"
+      },
+      {
+        "name": "bronze_new_bucket_name",
+        "label": "New bronze bucket name",
         "type": "text",
         "required": true,
+        "default": "oci_bronze",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "bronze_bucket_mode",
+          "equals": "new"
+        },
+        "group": "medallion"
+      },
+      {
+        "name": "bronze_existing_bucket_name",
+        "label": "Existing bronze bucket",
+        "type": "select",
+        "required": true,
+        "default": "oci_bronze",
+        "options_source": "oci_active_buckets",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "bronze_bucket_mode",
+          "equals": "existing"
+        },
+        "group": "medallion"
+      },
+      {
+        "name": "silver_bucket_mode",
+        "label": "Silver bucket mode",
+        "type": "select",
+        "required": true,
+        "default": "new",
+        "options": [
+          {
+            "value": "new",
+            "label": "Create new bucket"
+          },
+          {
+            "value": "existing",
+            "label": "Use existing bucket"
+          }
+        ],
+        "group": "medallion"
+      },
+      {
+        "name": "silver_new_bucket_name",
+        "label": "New silver bucket name",
+        "type": "text",
+        "required": true,
+        "default": "oci_silver",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "silver_bucket_mode",
+          "equals": "new"
+        },
+        "group": "medallion"
+      },
+      {
+        "name": "silver_existing_bucket_name",
+        "label": "Existing silver bucket",
+        "type": "select",
+        "required": true,
+        "default": "oci_silver",
+        "options_source": "oci_active_buckets",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "silver_bucket_mode",
+          "equals": "existing"
+        },
+        "group": "medallion"
+      },
+      {
+        "name": "gold_bucket_mode",
+        "label": "Gold bucket mode",
+        "type": "select",
+        "required": true,
+        "default": "new",
+        "options": [
+          {
+            "value": "new",
+            "label": "Create new bucket"
+          },
+          {
+            "value": "existing",
+            "label": "Use existing bucket"
+          }
+        ],
+        "group": "medallion"
+      },
+      {
+        "name": "gold_new_bucket_name",
+        "label": "New gold bucket name",
+        "type": "text",
+        "required": true,
+        "default": "oci_gold",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "gold_bucket_mode",
+          "equals": "new"
+        },
+        "group": "medallion"
+      },
+      {
+        "name": "gold_existing_bucket_name",
+        "label": "Existing gold bucket",
+        "type": "select",
+        "required": true,
+        "default": "oci_gold",
+        "options_source": "oci_active_buckets",
+        "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+        "min_length": 1,
+        "max_length": 128,
+        "visible_when": {
+          "field": "gold_bucket_mode",
+          "equals": "existing"
+        },
         "group": "medallion"
       },
       {
@@ -320,38 +512,83 @@
         "items": [
           {
             "kind": "field",
-            "name": "create_buckets",
+            "name": "artifacts_mode",
             "span": 1
           },
           {
             "kind": "field",
             "name": "artifacts_bucket_name",
             "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "artifacts_existing_bucket_name",
+            "span": 1
           }
         ]
       },
       {
         "id": "medallion",
-        "title": "Medallion storage",
+        "title": "Medallion Architecture",
         "items": [
           {
             "kind": "field",
-            "name": "landing_bucket_name",
+            "name": "landing_bucket_mode",
             "span": 1
           },
           {
             "kind": "field",
-            "name": "bronze_bucket_name",
+            "name": "landing_new_bucket_name",
             "span": 1
           },
           {
             "kind": "field",
-            "name": "silver_bucket_name",
+            "name": "landing_existing_bucket_name",
             "span": 1
           },
           {
             "kind": "field",
-            "name": "gold_bucket_name",
+            "name": "bronze_bucket_mode",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "bronze_new_bucket_name",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "bronze_existing_bucket_name",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "silver_bucket_mode",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "silver_new_bucket_name",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "silver_existing_bucket_name",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "gold_bucket_mode",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "gold_new_bucket_name",
+            "span": 1
+          },
+          {
+            "kind": "field",
+            "name": "gold_existing_bucket_name",
             "span": 1
           }
         ]
@@ -390,7 +627,8 @@
     "gods_eye_view_native_status",
     "gods_eye_view_snapshot_version",
     "viewer_certificate_sha256",
-    "viewer_certificate_pem"
+    "viewer_certificate_pem",
+    "bucket_modes"
   ],
   "preflight": {
     "entrypoint": "terraform/hooks/preflight.py",
@@ -406,7 +644,9 @@
       "availability_domain",
       "vm_bundle_object",
       "vm_bundle_sha256",
-      "name"
+      "name",
+      "artifacts_bucket_name",
+      "bucket_modes"
     ],
     "runtime_fields": [
       {
@@ -470,6 +710,13 @@
         "required": true,
         "default": "aidp-gods-eye-view",
         "pattern": "^[a-z][a-z0-9-]{2,40}$"
+      },
+      {
+        "name": "bucket_modes",
+        "label": "Verified individual bucket ownership modes",
+        "type": "text",
+        "required": true,
+        "max_length": 512
       }
     ],
     "secret_inputs": [],

@@ -24,6 +24,7 @@ from vm_delivery import runtime_environment
 TERRAFORM_OUTPUTS = {
     "ai_data_platform_id", "existing_workspace_key", "default_workspace_name",
     "objectstorage_namespace", "medallion_bucket_names", "artifacts_bucket_name",
+    "bucket_modes",
     "compartment_ocid", "instance_id", "admin_user_ocid", "identity_domain_id",
     "identity_domain_url", "gods_eye_view_group_id", "viewer_oidc_app_name",
     "public_origin", "agent_model_id",
@@ -53,6 +54,7 @@ def state():
         "default_workspace_name": "viewer-workspace",
         "objectstorage_namespace": "selected_namespace",
         "medallion_bucket_names": {layer: "selected-" + layer for layer in ("landing", "bronze", "silver", "gold")},
+        "bucket_modes": {layer: "new" for layer in ("landing", "bronze", "silver", "gold", "artifacts")},
         "artifacts_bucket_name": "selected-artifacts",
         "compartment_ocid": "ocid1.compartment.oc1..selected",
         "instance_id": "ocid1.instance.oc1.iad.selected",
@@ -192,6 +194,7 @@ def test_actual_cloudtechnext_manifest_parser_and_output_projection(state):
         pytest.skip("Optional real CTN consumer check requires CLOUDTECHNEXT_SOURCE_ROOT")
     program = '''
 import ast, copy, io, json, sys, zipfile
+from itertools import product
 from pathlib import Path, PurePosixPath
 from typing import Any
 sys.path.insert(0, sys.argv[1])
@@ -207,14 +210,19 @@ with zipfile.ZipFile(buffer) as archive:
 assert model.schema_version == 2 and model.form.groups[0].id == "credentials"
 outputs = {name: item["value"] for name, item in payload["state"]["outputs"].items()}
 for mode in ("new", "existing"):
-    for create in ("true", "false"):
+    for choices in product(("new", "existing"), repeat=5):
         inputs = {"identity_domain_id": outputs["identity_domain_id"], "admin_user_ocid": outputs["admin_user_ocid"],
-            "aidp_mode": mode, "create_buckets": create, "agent_model_id": outputs["agent_model_id"],
-            "artifacts_bucket_name": outputs["artifacts_bucket_name"],
-            "existing_ai_data_platform_ocid": outputs["ai_data_platform_id"], "existing_workspace_key": outputs["existing_workspace_key"],
-            **{layer + "_bucket_name": value for layer, value in outputs["medallion_bucket_names"].items()}}
+            "aidp_mode": mode, "agent_model_id": outputs["agent_model_id"],
+            "existing_ai_data_platform_ocid": outputs["ai_data_platform_id"], "existing_workspace_key": outputs["existing_workspace_key"]}
+        selected_names = {**outputs["medallion_bucket_names"], "artifacts": outputs["artifacts_bucket_name"]}
+        for layer, choice in zip(("landing", "bronze", "silver", "gold", "artifacts"), choices):
+            controller = "artifacts_mode" if layer == "artifacts" else layer + "_bucket_mode"
+            selected = "artifacts_bucket_name" if layer == "artifacts" and choice == "new" else layer + ("_new_bucket_name" if choice == "new" else "_existing_bucket_name")
+            inputs[controller], inputs[selected] = choice, selected_names[layer]
         prepared = prepare_manifest_inputs(model, json.dumps(inputs))
-        assert prepared["create_buckets"] == create and "name" not in prepared and "release_tag" not in prepared
+        assert "create_buckets" not in prepared and "name" not in prepared and "release_tag" not in prepared
+        assert all(prepared[name] == value for name, value in inputs.items() if name.endswith("_bucket_mode") or name == "artifacts_mode")
+        assert validate_manifest_input_overrides(model, {"artifacts_bucket_name": selected_names["artifacts"], "bucket_modes": json.dumps(dict(zip(("landing", "bronze", "silver", "gold", "artifacts"), choices)))})["artifacts_bucket_name"] == selected_names["artifacts"]
         if mode == "new":
             assert prepared["new_aidp_name"] == "aidp_gods_eye_view" and "existing_workspace_key" not in prepared
         else:
