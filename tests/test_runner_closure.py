@@ -8,6 +8,14 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_resource_manager_progress_retains_lifecycle_and_post_apply_verification():
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    assert manifest["execution_source"] == "oci_resource_manager"
+    assert [step["key"] for step in manifest["run_steps"]] == [
+        "queue", "credentials", "plan", "apply", "application", "complete",
+    ]
+
+
 def test_form_schema2_defines_the_complete_layout_without_legacy_inference():
     manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == 2
