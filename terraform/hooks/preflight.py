@@ -14,10 +14,14 @@ from first_install import vm_inputs
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
+sys.path.insert(0, str(ROOT / "scripts/deployment"))
+from image_assets import TAG
 from app.config import Settings
 from app.services.oci.identity import IdentityClient
 from app.services.oci.aidp import AidpClient
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
+
+DEFAULT_RESOURCE_PREFIX = "aidp-gods-eye-view"
 
 
 class CatalogSelectionError(ValueError):
@@ -32,7 +36,13 @@ def source_context(context):
     inputs = context.get("inputs", {})
     if inputs.get("source_commit_sha", commit) != commit:
         raise ValueError("Terraform source SHA differs from the runner's immutable source")
-    return {**context, "inputs": {**inputs, "source_commit_sha": commit}}
+    tag = source.get("ref")
+    if not isinstance(tag, str) or not TAG.fullmatch(tag) or inputs.get("release_tag", tag) != tag:
+        raise ValueError("Release tag differs from the runner's stable source")
+    prefix = inputs.get("name", DEFAULT_RESOURCE_PREFIX)
+    if not isinstance(prefix, str) or not re.fullmatch(r"[a-z][a-z0-9-]{2,40}", prefix):
+        raise ValueError("Invalid infrastructure resource prefix")
+    return {**context, "inputs": {**inputs, "source_commit_sha": commit, "release_tag": tag, "name": prefix}}
 
 
 class RoleClient(AidpClient):
@@ -177,7 +187,8 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi, known_cat
             api.session.close()
     else:
         verify_administrator(values, {"id": domain.id, "lifecycle_state": domain.lifecycle_state}, users["Resources"][0])
-    return {"inputs": {**resolved_vm, "medallion_bucket_names": json.dumps(values["medallion_bucket_names"], sort_keys=True),
+    return {"inputs": {**resolved_vm, "name": values.get("name", DEFAULT_RESOURCE_PREFIX),
+        "medallion_bucket_names": json.dumps(values["medallion_bucket_names"], sort_keys=True),
         "identity_domain_url": endpoint, "home_region": home[0], "operator_user_ocid": config["user"],
         "operator_fingerprint": config["fingerprint"]}, "events": [{"name": "Administrator authorization",
         "status": "passed", "message": "Domain identity verified; effective AIDP roles " + ("verified" if api else "require post-bootstrap verification")} ]}

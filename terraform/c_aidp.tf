@@ -6,7 +6,7 @@ resource "oci_ai_data_platform_ai_data_platform" "product" {
   depends_on             = [time_sleep.aidp_iam_propagation]
   count                  = var.aidp_mode == "new" ? 1 : 0
   compartment_id         = var.compartment_ocid
-  display_name           = var.name
+  display_name           = coalesce(var.new_aidp_name, var.name)
   default_workspace_name = "${var.name}-workspace"
   ai_data_platform_type  = "STRUCTURED"
   freeform_tags          = { managed-by = "deploy-studio", product = "gods_eye_view" }

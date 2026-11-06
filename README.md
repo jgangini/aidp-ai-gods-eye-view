@@ -28,12 +28,12 @@ La VM necesita salida a OCI y repositorios de paquetes. No se pide al usuario un
 
 ## Instalación desde Deploy Studio
 
-1. Abrir el proyecto **God’s Eye View**, seleccionar la release estable y mantener coincidentes la referencia y el commit de la fuente con `release_tag`.
+1. Abrir el proyecto **God’s Eye View** y seleccionar la release estable. El hook deriva el tag operativo de esa referencia y comprueba el commit; no se introduce otro tag en el formulario.
 2. Seleccionar **Identity Domain** en el listado OCI y el administrador AIDP. El preflight comprueba dominio, cuenta y permisos aplicables; no es necesario escribir el OCID del dominio.
 3. Elegir el destino AIDP:
    - **Create new platform** crea la plataforma y utiliza su workspace predeterminado. El post-apply asigna y vuelve a comprobar el rol administrativo del usuario seleccionado.
    - **Use existing platform** requiere `existing_ai_data_platform_ocid` y `existing_workspace_key` exactos. Si se reutiliza el catálogo `oci_medallion`, indicar su `existing_catalog_key`; un nombre coincidente no permite adoptarlo automáticamente.
-4. Establecer el prefijo estable de recursos, los cinco buckets, `create_buckets` y `agent_model_id`. Usar `create_buckets=false` al reutilizar buckets existentes. Conservar región, namespace e identidades de recursos compartidos.
+4. En modo new, elegir **New AIDP name** (default `aidp_gods_eye_view`). Seleccionar el modelo en **Agent Flow**, el modo de buckets en **Artifacts** y los cinco nombres de buckets. El combobox `create_buckets=false` reutiliza los buckets existentes. El prefijo de infraestructura es interno y se conserva al reanudar. Conservar región, namespace e identidades de recursos compartidos.
 5. Revisar recursos, permisos y costes en Deploy Studio e iniciar la instalación. El preflight fija una imagen pública Oracle Linux 9 y un AD compatibles; Terraform deriva el origen HTTPS de la IP asignada y registra ese mismo callback OIDC.
 6. Obtener `application_url`, `viewer_certificate_pem` y `viewer_certificate_sha256` de los resultados autenticados de Deploy Studio. Verificar la huella y establecer confianza en esa hoja/IP según la política del navegador o equipo antes de abrir **Sign in with OCI**.
 

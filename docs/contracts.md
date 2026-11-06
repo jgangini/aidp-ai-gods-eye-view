@@ -14,9 +14,9 @@ La selección de imagen/shape no reserva capacidad. El lanzamiento efectivo y la
 
 ## Instalar una plataforma nueva
 
-1. En Deploy Studio, seleccionar este proyecto, una release estable `vMAJOR.MINOR.PATCH` como fuente y el mismo valor en `release_tag`.
+1. En Deploy Studio, seleccionar este proyecto y una release estable `vMAJOR.MINOR.PATCH` como fuente. El hook obtiene `release_tag` de esa referencia inmutable; no se introduce otro tag en el formulario.
 2. Elegir región y compartimento. Seleccionar Identity Domain y administrador desde sus listas; el valor persistido es su OCID.
-3. Elegir `aidp_mode=new`, un prefijo de recursos estable, el modelo y las cinco selecciones de buckets.
+3. Elegir `aidp_mode=new`, el nombre del AIDP nuevo, el modelo y las cinco selecciones de buckets.
 4. Revisar el plan y ejecutar el despliegue. El operador conserva su propia identidad firmante. Post-apply concede/verifica `AI_DATA_PLATFORM_ADMIN` para el administrador seleccionado y añade su acceso al grupo lector del visor.
 5. Revisar los outputs, la salud y el estado nativo. Establecer confianza en el certificado publicado por Deploy Studio antes de iniciar OIDC en el visor.
 
@@ -39,13 +39,16 @@ Para compartir una plataforma con [AIDP AI Data Governance](https://github.com/j
 | `aidp_mode` | `new` o `existing`. |
 | `existing_ai_data_platform_ocid`, `existing_workspace_key` | Obligatorios para AIDP existente. |
 | `existing_catalog_key` | Clave exacta del catálogo externo, si se reutiliza. |
-| `name` | Prefijo estable de recursos. |
-| `create_buckets` | Crear las cinco selecciones o usar buckets existentes. |
+| `new_aidp_name` | Nombre visible del AIDP nuevo; default `aidp_gods_eye_view`. Solo aparece en modo new. No cambia el nombre del workspace ni los recursos del visor. |
+| `name` (interno) | Prefijo de infraestructura, oculto. Preflight conserva el valor de una instalación al reanudar o usa `aidp-gods-eye-view`. |
+| `create_buckets` | Combobox con valores `true`/`false`: crear los cinco buckets o usar los existentes. |
 | `landing_bucket_name`, `bronze_bucket_name`, `silver_bucket_name`, `gold_bucket_name`, `artifacts_bucket_name` | Cinco nombres distintos. |
-| `agent_model_id` | Modelo OCI para el agente. |
-| `release_tag` | Misma release estable e inmutable que la fuente seleccionada. |
+| `agent_model_id` | Selector `oci_genai_chat_models` para el modelo OCI del agente. |
+| `release_tag` (interno) | Derivado de la ref estable de la fuente; una selección diferente se rechaza. |
 
-El runner fija `source_commit_sha`. Preflight obtiene endpoint del dominio, región home, identidad/fingerprint del operador, imagen Oracle Linux 9 y AD compatibles, y objeto/hash del bundle. Conserva la imagen y el AD ya fijados al reanudar. Esos valores no se descubren ni escriben manualmente en el formulario.
+Los grupos siguen el orden de Governance: credenciales, servicios OCI, Identity, AI Data Platform Workbench, Agent Flow, Artifacts, almacenamiento medallion y recursos AIDP adicionales. Plataforma y workspace existentes utilizan los selectores `oci_aidp_platforms` y `oci_aidp_workspaces`, visibles solo en modo existing. El catálogo externo conserva su clave exacta opcional para ese modo. El formulario declara la imagen local compartida de CTN y el enlace al proyecto original.
+
+El runner fija `source_commit_sha`. Preflight obtiene endpoint del dominio, región home, identidad/fingerprint del operador, prefijo de infraestructura, imagen Oracle Linux 9 y AD compatibles, y objeto/hash del bundle. Conserva el prefijo, la imagen y el AD ya fijados al reanudar. Esos valores no se descubren ni escriben manualmente en el formulario.
 
 Terraform deriva `public_origin` de la IP pública asignada y registra ese mismo origen en el callback OIDC. No exige dominio DNS, certificado, clave TLS ni coordenadas del bundle aportadas por el usuario.
 

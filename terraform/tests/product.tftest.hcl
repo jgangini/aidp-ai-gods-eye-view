@@ -32,6 +32,10 @@ variables {
 run "new_platform_owned" {
   command = plan
   assert {
+    condition     = oci_ai_data_platform_ai_data_platform.product[0].display_name == var.name
+    error_message = "Omitting an explicit AIDP display name must preserve the infrastructure prefix contract."
+  }
+  assert {
     condition     = length(oci_ai_data_platform_ai_data_platform.product) == 1 && length(data.oci_ai_data_platform_ai_data_platform.existing) == 0
     error_message = "New platform must be owned exclusively by this stack."
   }
@@ -42,6 +46,22 @@ run "new_platform_owned" {
   assert {
     condition     = tolist(oci_core_security_list.product.ingress_security_rules)[0].tcp_options[0].min == 443
     error_message = "Only gateway TLS may be public."
+  }
+}
+run "new_platform_display_name_is_separate" {
+  command = plan
+  variables {
+    new_aidp_name  = "aidp_gods_eye_view"
+    name           = "existing-prefix"
+    create_buckets = "false"
+  }
+  assert {
+    condition     = oci_ai_data_platform_ai_data_platform.product[0].display_name == "aidp_gods_eye_view" && output.default_workspace_name == "existing-prefix-workspace" && oci_core_instance.product.display_name == "existing-prefix"
+    error_message = "The AIDP display name must not rename the viewer infrastructure or workspace."
+  }
+  assert {
+    condition     = length(oci_objectstorage_bucket.product) == 0
+    error_message = "The false combobox value must not create existing buckets."
   }
 }
 run "existing_platform_external" {

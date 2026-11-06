@@ -195,7 +195,7 @@ import ast, copy, io, json, sys, zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 sys.path.insert(0, sys.argv[1])
-from app.services.deployment_source import _read_manifest
+from app.services.deployment_source import _read_manifest, prepare_manifest_inputs, validate_manifest_input_overrides
 payload = json.load(sys.stdin)
 buffer = io.BytesIO()
 with zipfile.ZipFile(buffer, "w") as archive:
@@ -205,6 +205,21 @@ with zipfile.ZipFile(buffer) as archive:
     info = archive.getinfo("terraform/deploy-studio.json")
     model, _ = _read_manifest(archive, [(info, PurePosixPath(info.filename))])
 assert model.schema_version == 2 and model.form.groups[0].id == "credentials"
+outputs = {name: item["value"] for name, item in payload["state"]["outputs"].items()}
+for mode in ("new", "existing"):
+    for create in ("true", "false"):
+        inputs = {"identity_domain_id": outputs["identity_domain_id"], "admin_user_ocid": outputs["admin_user_ocid"],
+            "aidp_mode": mode, "create_buckets": create, "agent_model_id": outputs["agent_model_id"],
+            "artifacts_bucket_name": outputs["artifacts_bucket_name"],
+            "existing_ai_data_platform_ocid": outputs["ai_data_platform_id"], "existing_workspace_key": outputs["existing_workspace_key"],
+            **{layer + "_bucket_name": value for layer, value in outputs["medallion_bucket_names"].items()}}
+        prepared = prepare_manifest_inputs(model, json.dumps(inputs))
+        assert prepared["create_buckets"] == create and "name" not in prepared and "release_tag" not in prepared
+        if mode == "new":
+            assert prepared["new_aidp_name"] == "aidp_gods_eye_view" and "existing_workspace_key" not in prepared
+        else:
+            assert prepared["existing_workspace_key"] == outputs["existing_workspace_key"] and "new_aidp_name" not in prepared
+assert validate_manifest_input_overrides(model, {"name": "existing-prefix"}) == {"name": "existing-prefix"}
 for version in (1, 2):
     invalid = copy.deepcopy(payload["manifest"])
     invalid["schema_version"] = version

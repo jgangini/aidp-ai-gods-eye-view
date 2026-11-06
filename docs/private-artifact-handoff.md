@@ -38,6 +38,8 @@ Cada JSON permite 65.536 bytes. Los assets se almacenan fuera de la extracción 
 
 El ejemplo abrevia los seis nombres. IDs y tamaños son ilustrativos. `path` está presente solo cuando el control plane descargó/verificó ese archivo. El consumidor exige repositorio/ref/commit iguales a `context.source` y a `inputs.release_tag/source_commit_sha`, schema 1, IDs positivos distintos, seis nombres exactos, límites y hashes válidos.
 
+Antes de consumir el handoff, `source_context` deriva `inputs.release_tag` de `context.source.ref` y rechaza refs inestables o tags contradictorios. El tag operativo no es un campo del formulario. El SHA sigue ligado a la fuente inmutable.
+
 Cada JSON schema 1/updater_protocol 1 vincula repositorio, release, commit, nombre/hash del gzip, plataforma `linux/amd64`, tag canónico `<componente>:<commit>` e ID `sha256:...`.
 
 ## Revalidación y staging

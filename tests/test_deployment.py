@@ -32,10 +32,17 @@ def test_domain_and_active_admin_are_exact():
 
 
 def test_source_sha_comes_from_runner_metadata_and_cannot_be_replaced_by_form():
-    context = {"source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "commit_sha": "a" * 40}, "inputs": {}}
+    context = {"source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "commit_sha": "a" * 40, "ref": "v2.0.1"}, "inputs": {}}
     assert source_context(context)["inputs"]["source_commit_sha"] == "a" * 40
+    assert source_context(context)["inputs"]["release_tag"] == "v2.0.1"
+    assert source_context(context)["inputs"]["name"] == "aidp-gods-eye-view"
+    assert source_context({**context, "inputs": {"name": "existing-prefix"}})["inputs"]["name"] == "existing-prefix"
     with pytest.raises(ValueError, match="differs"):
         source_context({**context, "inputs": {"source_commit_sha": "b" * 40}})
+    with pytest.raises(ValueError, match="Release tag"):
+        source_context({**context, "inputs": {"release_tag": "v2.0.0"}})
+    with pytest.raises(ValueError, match="stable source"):
+        source_context({**context, "source": {**context["source"], "ref": "main"}})
 
 
 def test_resume_rejects_a_changed_catalog_selection_before_any_request():

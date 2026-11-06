@@ -37,6 +37,30 @@ def test_form_schema2_defines_the_complete_layout_without_legacy_inference():
                     assert all(option["label"].strip() for option in item["options"])
 
 
+def test_form_uses_governance_groups_selectors_and_internal_installation_inputs():
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    assert [group["id"] for group in manifest["form"]["groups"]] == [
+        "credentials", "services", "identity", "aidp_platform", "enterprise_ai", "artifacts", "medallion", "additional_resources"]
+    fields = {field["name"]: field for field in manifest["form"]["fields"]}
+    assert {field["type"] for field in fields.values()} <= {"text", "select"}
+    assert not {"name", "release_tag"} & fields.keys()
+    assert fields["new_aidp_name"]["default"] == "aidp_gods_eye_view"
+    assert fields["new_aidp_name"]["visible_when"] == {"field": "aidp_mode", "equals": "new"}
+    assert fields["create_buckets"]["default"] == "true"
+    assert [option["value"] for option in fields["create_buckets"]["options"]] == ["true", "false"]
+    for name, source in (("existing_ai_data_platform_ocid", "oci_aidp_platforms"),
+            ("existing_workspace_key", "oci_aidp_workspaces"), ("agent_model_id", "oci_genai_chat_models")):
+        assert fields[name]["options_source"] == source
+    assert fields["existing_catalog_key"]["visible_when"] == {"field": "aidp_mode", "equals": "existing"}
+    runtime = {field["name"]: field for field in manifest["preflight"]["runtime_fields"]}
+    assert runtime["name"]["default"] == "aidp-gods-eye-view"
+    assert "name" in manifest["preflight"]["output_inputs"]
+    presentation = manifest["presentation"]
+    assert presentation["image"] == "/assets/oci-aidp-cloud-migration-lab.png" and presentation["image_alt"]
+    assert "https://github.com/bilawalsidhu/gods-eye-view" in presentation["summary"]
+    assert 300 <= len(presentation["summary"]) <= 330 and "\n" not in presentation["summary"]
+
+
 def test_runner_archive_is_bounded_and_excludes_viewer_ui_and_corpus_payloads():
     manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
     roots = [PurePosixPath(manifest["terraform"]["path"]),
