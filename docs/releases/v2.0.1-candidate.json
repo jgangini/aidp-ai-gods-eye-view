@@ -151,8 +151,24 @@
     },
     "graphify": "Existing graph consulted; refresh owned by coordinator",
     "native_oci_acceptance": "pending",
-    "browser_review": "coordinator-owned; not performed by this task",
-    "coordinator_real_ssr_reported": "passed"
+    "browser_review": "Passed locally by coordinator against v2.0.1; not performed by this task",
+    "coordinator_real_ssr_reported": "passed",
+    "coordinator_browser_report": {
+      "release": "v2.0.1",
+      "image_complete": true,
+      "reported_image_pixels": [
+        972,
+        1618
+      ],
+      "original_link_clickable": true,
+      "expected_groups_present": true,
+      "new_aidp_name": "aidp_gods_eye_view",
+      "checkbox_count": 0,
+      "summary_lines": 6,
+      "summary_height_px": 144,
+      "summary_line_height_px": 24,
+      "oci_mutations": 0
+    }
   },
   "previous_releases_verified_unchanged": [
     "v1.0.0",
