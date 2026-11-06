@@ -58,9 +58,11 @@
     "fields": [
       {
         "name": "identity_domain_id",
-        "label": "Identity Domain OCID",
-        "type": "text",
-        "required": true
+        "label": "Identity Domain",
+        "type": "select",
+        "required": true,
+        "options_source": "oci_identity_domains",
+        "pattern": "^ocid1\\.domain\\.[A-Za-z0-9_.-]+$"
       },
       {
         "name": "aidp_mode",

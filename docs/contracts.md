@@ -12,7 +12,7 @@ El gateway elimina headers aportados por el cliente. Node y el bridge carecen de
 
 `terraform/deploy-studio.json` usa schema 1 y el selector común `oci_aidp_administrators`. Se validó con el modelo Pydantic y extractor de archivo reales de CloudTechNext, incluidos entrypoints e include_paths. Esa validación local no demuestra instalación cloud.
 
-El usuario elige `identity_domain_id`, `admin_user_ocid`, `aidp_mode=new|existing` y, para existente, `existing_ai_data_platform_ocid` y `existing_workspace_key`. Los hooks vuelven a comprobar identidad/dominio/roles en instalación y Resume. La plataforma nueva concede explícitamente `AI_DATA_PLATFORM_ADMIN` al seleccionado y verifica el resultado. El operador conserva su propia identidad firmante; la selección no lo suplanta ni crea otro provisioner.
+El usuario selecciona `identity_domain_id` mediante `oci_identity_domains` (valor OCID, etiqueta nombre/compartimento; contrato CTN de dominios ACTIVE en región home), `admin_user_ocid`, `aidp_mode=new|existing` y, para existente, `existing_ai_data_platform_ocid` y `existing_workspace_key`. Los hooks vuelven a comprobar identidad/dominio/roles en instalación y Resume. La plataforma nueva concede explícitamente `AI_DATA_PLATFORM_ADMIN` al seleccionado y verifica el resultado. El operador conserva su propia identidad firmante; la selección no lo suplanta ni crea otro provisioner.
 
 Las cuatro selecciones medallion y artifacts son distintas. Un catálogo externo requiere `existing_catalog_key` exacto; encontrar un nombre coincidente no autoriza adoptarlo. Los recursos externos no entran al state como recursos a destruir. Los recibos operativos usan CAS, identidad exacta y exclusión de runners.
 

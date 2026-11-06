@@ -39,3 +39,13 @@ def test_runner_declares_private_assets_without_hook_tokens():
         assert "release_download_token" not in manifest[phase]["secret_inputs"]
     assert manifest["preflight"]["secret_inputs"] == []
     assert manifest["post_apply"]["secret_inputs"] == []
+
+
+def test_identity_domain_uses_the_active_domain_selector_with_an_ocid_value():
+    import re
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    field = next(item for item in manifest["form"]["fields"] if item["name"] == "identity_domain_id")
+    assert field["type"] == "select" and field["options_source"] == "oci_identity_domains"
+    assert field["required"] is True
+    assert re.fullmatch(field["pattern"], "ocid1.domain.oc1..selected")
+    assert not re.fullmatch(field["pattern"], "domain-name")

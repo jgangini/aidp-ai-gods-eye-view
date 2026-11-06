@@ -63,7 +63,7 @@ Viewer/gateway usan sus prefijos de la tabla. Namespace y bucket proceden de out
 ## Parámetros de la prueba compartida
 
 - Orden Governance→Market→GodEye sobre un AIDP. Para GodEye: `aidp_mode=existing`, `existing_ai_data_platform_ocid` y `existing_workspace_key` iguales a los outputs exactos de la primera instalación. No crear otra plataforma. Aún no se conocen esos valores reales en este candidato.
-- `identity_domain_id`: dominio ACTIVE; `admin_user_ocid`: usuario ACTIVE de ese dominio, seleccionado por `oci_aidp_administrators` y revalidado con roles efectivos USER/GROUP/ROLE. Operador firmante separado del administrador elegido.
+- `identity_domain_id`: selección `oci_identity_domains` con valor OCID, dominio ACTIVE; `admin_user_ocid`: usuario ACTIVE de ese dominio, seleccionado por `oci_aidp_administrators` y revalidado con roles efectivos USER/GROUP/ROLE. Operador firmante separado del administrador elegido.
 - `existing_catalog_key`: clave exacta al reutilizar `oci_medallion`; ausencia permite creación administrada. Resume rechaza cambiar catálogo, workspace, plataforma o administrador.
 - Cinco buckets distintos: `landing_bucket_name`, `bronze_bucket_name`, `silver_bucket_name`, `gold_bucket_name`, `artifacts_bucket_name`. `create_buckets=false` al reutilizarlos. Mantener región y namespace correctos.
 - `agent_model_id` sigue siendo una selección del despliegue. Preflight resuelve `availability_domain` e `image_ocid` Oracle Linux 9 y calcula objeto/SHA del bundle. Terraform deriva `public_origin` de la IP asignada; la VM genera TLS local. No hay campos manuales de dominio, certificado, clave TLS ni bundle. `source_commit_sha` deriva de la fuente confiable del runner. `release_tag` debe identificar la release estable del código validado.
@@ -72,3 +72,5 @@ El coordinador posee Browser/Docker compartido, colas, exclusión mutua y mutaci
 
 
 Release disponible: `v1.0.0`, SHA `219014036e3fbba1d808f5f10822aa786bf607f6`, privada e inmutable, ID `436010655`. [Recibo con los seis assets reales y bundle separado](releases/v1.0.0.json). El catálogo CTN aún debe habilitar este proyecto; no se alteró desde esta tarea.
+
+Parche vigente: [`v1.0.1`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.1), SHA `6605611c02ea79f1732044ea8305b8b6da322ed8`, ID `436036581`, privada e inmutable. [Recibo completo](releases/v1.0.1.json). Corrige el primer arranque sin dominio/certificado ni bundle manuales. VM local TLS y revisión del host documentadas en [operación](operations.md). v1.0.0 se conserva; no se alteraron sus assets.
