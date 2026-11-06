@@ -1,0 +1,106 @@
+{
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "tag": "v1.0.2",
+  "commit": "730866e381d7573b9e40ab1badd1b152870de816",
+  "release_id": 436043929,
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.2",
+  "immutable": true,
+  "draft": false,
+  "prerelease": false,
+  "assets": {
+    "gods-eye-view-api-image-amd64.tar.gz": {
+      "asset_id": 715669992,
+      "size": 150630042,
+      "sha256": "25feea72007c1deda0a72bf1d0b01941b0d7353abc05401ff34e33440ed35435"
+    },
+    "gods-eye-view-api-release.json": {
+      "asset_id": 715670004,
+      "size": 561,
+      "sha256": "e8a99bd04358b6c7c58259c789543c6cc6494ad3a2bd65023b6f0d1b34956de8"
+    },
+    "gods-eye-view-gateway-image-amd64.tar.gz": {
+      "asset_id": 715669995,
+      "size": 20447869,
+      "sha256": "eabee1ef3948b4e8e452cf30b3374f7f14b550be87398877fd95f5aefb24e0c5"
+    },
+    "gods-eye-view-gateway-release.json": {
+      "asset_id": 715670027,
+      "size": 569,
+      "sha256": "fe8d1d3a0f972f2ef2280ddfe4f5288477104b6aecded8c93f65b6b00723abd3"
+    },
+    "gods-eye-view-image-amd64.tar.gz": {
+      "asset_id": 715670007,
+      "size": 261961788,
+      "sha256": "27b2c0cd58b201d3d6cda5abd0002624a546de52d26c709028671971231cb343"
+    },
+    "gods-eye-view-release.json": {
+      "asset_id": 715670002,
+      "size": 553,
+      "sha256": "d6fe0b859417aa3757f982e73cb823d132439d477b276788189835f796499e07"
+    }
+  },
+  "images": {
+    "api": {
+      "asset_name": "gods-eye-view-api-image-amd64.tar.gz",
+      "image_id": "sha256:e5f21e82264d82d8291f8d0867333663e0caf9e12c7c899960eae0bc41e0495a",
+      "image_tag": "gods-eye-view-api:730866e381d7573b9e40ab1badd1b152870de816",
+      "platform": "linux/amd64",
+      "sha256": "25feea72007c1deda0a72bf1d0b01941b0d7353abc05401ff34e33440ed35435"
+    },
+    "viewer": {
+      "asset_name": "gods-eye-view-image-amd64.tar.gz",
+      "image_id": "sha256:d3daa4bc25efb6588d1e56fcbc73a9965e231fcd94d5dd6e412352e0830882da",
+      "image_tag": "gods-eye-view:730866e381d7573b9e40ab1badd1b152870de816",
+      "platform": "linux/amd64",
+      "sha256": "27b2c0cd58b201d3d6cda5abd0002624a546de52d26c709028671971231cb343"
+    },
+    "gateway": {
+      "asset_name": "gods-eye-view-gateway-image-amd64.tar.gz",
+      "image_id": "sha256:51b6c380427220f46bde089163baf7fe6294d948d3cab8f566a0fa53f7c28292",
+      "image_tag": "gods-eye-view-gateway:730866e381d7573b9e40ab1badd1b152870de816",
+      "platform": "linux/amd64",
+      "sha256": "eabee1ef3948b4e8e452cf30b3374f7f14b550be87398877fd95f5aefb24e0c5"
+    }
+  },
+  "preflight_local_bytes": "passed",
+  "postapply_local_bytes_and_simulated_cas": "passed",
+  "oci_mutations": 0,
+  "ci_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42152185322",
+  "source_archive": {
+    "limits": {
+      "github_archive_max_bytes": 104857600,
+      "github_source_max_files": 250,
+      "github_source_max_extracted_bytes": 10485760
+    },
+    "archive_bytes": 46612450,
+    "selected_files": 88,
+    "selected_bytes": 1153132,
+    "only_selected_change_from_v1_0_1": [
+      "terraform/deploy-studio.json"
+    ],
+    "domain_selector": "oci_identity_domains"
+  },
+  "vm_bundle": {
+    "bytes": 22709,
+    "sha256": "7fab22b0c20c405f79718b58b77071f64c99dd4d3c0c61ea0c7bc57bf44a4a7b",
+    "release_asset": false,
+    "derived_by_preflight": true
+  },
+  "host_revision": {
+    "protocol": 2,
+    "sha256": "77909c23cfa39ac899a9c04e817cd2290fee4ccdbc16f6bea2acf708c37737d5",
+    "covers": [
+      "vm_bundle_sha256",
+      "terraform/templatefile/user_data.sh"
+    ]
+  },
+  "validation": {
+    "product_passed": 1672,
+    "product_skipped": 6,
+    "terraform_mock_passed": 3,
+    "sentrux": "DEGRADED; initial baseline retained",
+    "native_oci_acceptance": "pending",
+    "browser_certificate_trust": "explicit trust in the self-signed IP leaf required; acceptance pending",
+    "domain_selector": "real CTN schema accepted; real options/UI pending coordinator"
+  }
+}
