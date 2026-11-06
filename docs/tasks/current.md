@@ -2,6 +2,14 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
+## Candidato de formulario alineado con Governance v2.0.1
+
+Fuente `68412c3c609b8b140224e863477873cb49e947b5`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42262217605](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42262217605) con seis jobs aprobados. Grupos Governance, 14 combobox/textbox, selectores AIDP/workspace/modelo, nombre AIDP con default `aidp_gods_eye_view`, bucket mode booleano, imagen local CTN y descripción inglesa de 321 caracteres con el enlace original. Tag y prefijo operativos quedan internos, con binding y conservación en Resume.
+
+Postflight final: 1701 passed, seis skips, cuatro mocks Terraform y artefactos AIDP aprobados. Sentrux conserva el fallo histórico sin degradación adicional; Graphify sigue bajo responsabilidad del coordinador. SSR real reportado aprobado por el coordinador; Browser/OCI pendientes. [Evidencia completa](../evidence/deploy-studio-governance-form.md).
+
+Borrador ID `436798697`, seis assets verificados y handoff/CAS simulado aprobado desde contexto sin campos operativos. **Publicación rechazada por la revisión automática por falta de autorización específica reconocida para tag/commit/payload.** No se reintentó ni se abrió otra aprobación desde este chat. El [recibo](../releases/v2.0.1-candidate.json) fija los valores del candidato; las releases anteriores permanecen intactas.
+
 ## Formulario completo v2.0.0 publicado
 
 El [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1) utiliza `schema_version: 2` y grupos JSON completos sobre `f74fb0b2f8fa675b186f03e9e1839970d2937b62`. Región tiene `span: 2` encima de los controles de compartimento. [CI 42224278241](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42224278241) aprobó seis jobs; postflight final: 1700 passed, seis skips y tres mocks Terraform aprobados. Sentrux conserva el fallo histórico; Graphify se consultó y su actualización queda al coordinador.

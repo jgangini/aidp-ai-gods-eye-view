@@ -1,0 +1,29 @@
+# Formulario alineado con Governance: candidato v2.0.1
+
+Fuente: `68412c3c609b8b140224e863477873cb49e947b5`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42262217605](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42262217605). El contrato vigente está en [Instalación e identidad](../contracts.md).
+
+El manifiesto schema 2 organiza credenciales, servicios OCI, Identity, AIDP, Agent Flow, Artifacts, almacenamiento medallion y catálogo adicional. Los 14 campos ordinarios son combobox/textbox; las cargas OCI permanecen como controles especiales. Plataforma, workspace y modelo utilizan los selectores reales de CTN. La imagen es `/assets/oci-aidp-cloud-migration-lab.png`, disponible en CTN. La descripción inglesa tiene 321 caracteres sin saltos forzados e incluye el [proyecto original](https://github.com/bilawalsidhu/gods-eye-view).
+
+`new_aidp_name` tiene binding Terraform al display name del AIDP nuevo y default de formulario `aidp_gods_eye_view`. Su variable admite null para conservar el contrato previo cuando no se especifica. Workspace, VM, IAM y OIDC mantienen el prefijo de infraestructura existente. `name` pasa a runtime field interno: preflight conserva el valor persistido al reanudar o utiliza `aidp-gods-eye-view`. El runner CTN reutiliza las variables guardadas en Resume.
+
+`release_tag` se deriva de `context.source.ref` en la normalización compartida de ambos hooks. Se rechazan refs inestables, tags contradictorios y prefijos inválidos antes del flujo de instalación. El formulario no muestra tag ni prefijo operativo. `create_buckets` conserva su binding bool de Terraform mediante los strings exactos `true`/`false` del combobox. Los cinco nombres siguen siendo explícitos, distintos y sujetos a su modo conjunto; no se añadió un servicio de memoria o base de datos.
+
+## Checks realizados
+
+- Preflight y postflight existentes ejecutados; el comando global sigue fallando por el gate Sentrux histórico.
+- Postflight final: **1701 passed, 6 skipped**, tres programas/manifiestos AIDP verificados, Terraform fmt/validate y **cuatro mocks aprobados**. El nuevo mock prueba el nombre con underscore, conserva VM/workspace y verifica que el string `false` no cree buckets.
+- Parser/preparador CTN real: new/existing AIDP con ambos modos de buckets, defaults, visibilidad y override interno del prefijo. Las regresiones de fuente comprueban tag derivado, rechazo de contradicciones/ref móvil y conservación del prefijo al reanudar. Una revisión delegada de bindings y callers fue solo lectura; detectó la incompatibilidad original del prefijo y documentación que también se corrigió.
+- CI del SHA de fuente: seis jobs aprobados; Python 1701 passed / seis skips, controles 89 tests/build, visor 119 tests/build, rollback simulado y tres imágenes empaquetadas. Los skips locales corresponden a GIS opt-in, cuatro escenarios Spark/JDK/Delta y Nginx; en CI el sexto skip es el consumidor CTN externo y Nginx sí se comprobó. No sumar ejecuciones como cobertura diferente.
+- ZIP completo: **46.647.764 bytes**, selección CTN de **88 archivos / 1.164.349 bytes**, dentro de los límites existentes de 100 MiB / 250 archivos / 10 MiB. Bundle CI de 22.709 bytes, SHA-256 `7fab22b0c20c405f79718b58b77071f64c99dd4d3c0c61ea0c7bc57bf44a4a7b`; host Linux V2 `77909c23cfa39ac899a9c04e817cd2290fee4ccdbc16f6bea2acf708c37737d5`, iguales a v2.0.0.
+- Sentrux pre/post sin cambios: calidad 6610, coupling 0,07, 104 funciones complejas, cero ciclos/god files; DEGRADED frente al baseline inicial 7780 conservado. Sin reglas personalizadas. Graphify sigue bajo responsabilidad del coordinador; sus archivos no se modificaron ni incluyeron en los commits de este cambio.
+- El coordinador reportó render SSR real del manifiesto satisfactorio. Este chat no ejecutó Browser, Docker compartido, OCI ni Apify. La aceptación Browser/OCI corresponde al coordinador.
+
+## Paquete y publicación
+
+El [borrador v2.0.1](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-2bca1fc694667782c753), ID `436798697`, apunta al SHA de fuente anterior. Sus seis IDs, tamaños y SHA-256 remotos coinciden con los bytes locales. Los gzip son los de CI; los JSON ligan componente, plataforma, ID de imagen, tag y SHA. El [recibo del candidato](../releases/v2.0.1-candidate.json) contiene los valores exactos.
+
+El handoff pasó con los seis assets reales partiendo de un contexto sin tag ni prefijo operativos: el normalizador los deriva antes de inspeccionar. CAS simulado realizó tres cargas y ninguna al repetir, sin OCI. La revisión estática examinó tres imágenes, 34 capas únicas, 80.909 archivos y 1.565.684.520 bytes, sin ejecutarlas. Los 68 archivos con coincidencias conocidas conservaron su hash; seis archivos `.pyc` nuevos contienen payloads compilados ya revisados, con diferencias solo en sus encabezados de 16 bytes. No se imprimieron valores candidatos ni se ejecutó el bytecode.
+
+**La publicación fue rechazada por la revisión automática**, que no reconoció autorización específica para este tag, commit y payload de seis assets. No se reintentó ni se solicitó otra aprobación al usuario desde este chat. La candidata sigue como draft, sin inmutabilidad todavía, para el gate de publicación del coordinador. Las cinco releases previas conservaron IDs, assets, tamaños, digests e inmutabilidad.
+
+Limitaciones: Browser e instalación reales pendientes; la existencia de buckets reutilizados no tiene una nueva comprobación preflight en esta tarea. Continúan los [avisos heredados de dependencias](native-dependency-review.md) y el gate Sentrux no aprobado. La publicación o una prueba local no acreditan conversación del agente ni aceptación OCI.

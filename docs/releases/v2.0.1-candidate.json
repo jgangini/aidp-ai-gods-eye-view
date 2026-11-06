@@ -1,0 +1,179 @@
+{
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "proposed_tag": "v2.0.1",
+  "commit": "68412c3c609b8b140224e863477873cb49e947b5",
+  "release_id": 436798697,
+  "draft_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-2bca1fc694667782c753",
+  "draft": true,
+  "immutable": false,
+  "prerelease": false,
+  "published": false,
+  "publication_status": "Blocked by automatic approval review: this specific v2.0.1 release, source commit and six-asset payload require recognized authorization",
+  "assets": {
+    "gods-eye-view-api-image-amd64.tar.gz": {
+      "asset_id": 717966638,
+      "size": 150630089,
+      "sha256": "1d2cc187a1da925a1ab5e8198c70c23423cf4bec8fc752aba4892df6e36a9f4a"
+    },
+    "gods-eye-view-api-release.json": {
+      "asset_id": 717966620,
+      "size": 561,
+      "sha256": "1d8f2a41f02b441ff48e1246d089d0d580b70a205eedf54118e264ff8201f603"
+    },
+    "gods-eye-view-gateway-image-amd64.tar.gz": {
+      "asset_id": 717966621,
+      "size": 20446508,
+      "sha256": "8e602fa06198c5f78419f973e8eee7feea436d228fca6702dbcf3a7dfcbeeaf7"
+    },
+    "gods-eye-view-gateway-release.json": {
+      "asset_id": 717966665,
+      "size": 569,
+      "sha256": "1a7970bf8fcd10a5444551fe0438a46f929edf7d8aed2c724eb69ab4536dbeef"
+    },
+    "gods-eye-view-image-amd64.tar.gz": {
+      "asset_id": 717966644,
+      "size": 261982964,
+      "sha256": "e5a7ea2775ee6ea8edcfea76c0c99f72ed90beca7afb1692415984fdb9825e74"
+    },
+    "gods-eye-view-release.json": {
+      "asset_id": 717966627,
+      "size": 553,
+      "sha256": "0b55b0911e6be01b4b705881db0eb2aaf2b88eedf420aca2209e2c131df958db"
+    }
+  },
+  "images": {
+    "api": {
+      "asset_name": "gods-eye-view-api-image-amd64.tar.gz",
+      "image_id": "sha256:8ba66eb95b6d73eb08f537a84f34e4d1ef41288ed56f038d47fd3b45d865eb62",
+      "image_tag": "gods-eye-view-api:68412c3c609b8b140224e863477873cb49e947b5",
+      "platform": "linux/amd64",
+      "sha256": "1d2cc187a1da925a1ab5e8198c70c23423cf4bec8fc752aba4892df6e36a9f4a"
+    },
+    "viewer": {
+      "asset_name": "gods-eye-view-image-amd64.tar.gz",
+      "image_id": "sha256:87a77d65ebe0ed3e76db89b95814b20dd5cb060b00f6b1c521a36f675a1e6b4c",
+      "image_tag": "gods-eye-view:68412c3c609b8b140224e863477873cb49e947b5",
+      "platform": "linux/amd64",
+      "sha256": "e5a7ea2775ee6ea8edcfea76c0c99f72ed90beca7afb1692415984fdb9825e74"
+    },
+    "gateway": {
+      "asset_name": "gods-eye-view-gateway-image-amd64.tar.gz",
+      "image_id": "sha256:14af672141705dd7df494989208bb6b321505cf8cd8e2beff55891678891caf7",
+      "image_tag": "gods-eye-view-gateway:68412c3c609b8b140224e863477873cb49e947b5",
+      "platform": "linux/amd64",
+      "sha256": "8e602fa06198c5f78419f973e8eee7feea436d228fca6702dbcf3a7dfcbeeaf7"
+    }
+  },
+  "ci_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42262217605",
+  "source_archive": {
+    "limits": {
+      "github_archive_max_bytes": 104857600,
+      "github_source_max_files": 250,
+      "github_source_max_extracted_bytes": 10485760
+    },
+    "archive_bytes": 46647764,
+    "selected_files": 88,
+    "selected_bytes": 1164349,
+    "outputs": [
+      "ai_data_platform_id",
+      "instance_id",
+      "public_origin",
+      "admin_user_ocid",
+      "identity_domain_id",
+      "existing_workspace_key",
+      "default_workspace_name",
+      "objectstorage_namespace",
+      "medallion_bucket_names",
+      "artifacts_bucket_name",
+      "compartment_ocid",
+      "identity_domain_url",
+      "gods_eye_view_group_id",
+      "viewer_oidc_app_name",
+      "agent_model_id",
+      "workspace_key",
+      "application_url",
+      "gods_eye_view_native_status",
+      "gods_eye_view_snapshot_version",
+      "viewer_certificate_sha256",
+      "viewer_certificate_pem"
+    ]
+  },
+  "vm_bundle": {
+    "bytes": 22709,
+    "sha256": "7fab22b0c20c405f79718b58b77071f64c99dd4d3c0c61ea0c7bc57bf44a4a7b",
+    "zip_metadata_platform": "Linux CTN/CI",
+    "ci_artifact_sha256_verified": true
+  },
+  "host_revision": {
+    "protocol": 2,
+    "sha256": "77909c23cfa39ac899a9c04e817cd2290fee4ccdbc16f6bea2acf708c37737d5",
+    "same_as_v2_0_0": true
+  },
+  "handoff": {
+    "release_id": 436798697,
+    "commit": "68412c3c609b8b140224e863477873cb49e947b5",
+    "preflight_json_only": "passed",
+    "raw_context_without_operational_fields": "passed",
+    "post_apply_six_assets": "passed",
+    "simulated_cas_uploads": 3,
+    "repeat_uploads": 0,
+    "oci_mutations": 0
+  },
+  "image_review": {
+    "archives": 3,
+    "assets": 6,
+    "layers": 34,
+    "layer_files": 80909,
+    "layer_bytes": 1565684520
+  },
+  "new_pyc_candidates": {
+    "files": 6,
+    "compiled_payloads_unchanged": true,
+    "header_bytes_excluded": 16
+  },
+  "validation": {
+    "preflight": "DEGRADED; original baseline retained",
+    "local_product_passed": 1701,
+    "local_product_skipped": 6,
+    "ci_product_passed": 1701,
+    "ci_product_skipped": 6,
+    "terraform_mock_passed": 4,
+    "controls_passed": 89,
+    "native_viewer_passed": 119,
+    "sentrux": {
+      "result": "DEGRADED",
+      "quality_initial": 7780,
+      "quality_pre": 6610,
+      "quality_post": 6610,
+      "coupling": 0.07,
+      "complex_functions": 104,
+      "cycles": 0,
+      "god_files": 0,
+      "custom_rules": false
+    },
+    "graphify": "Existing graph consulted; refresh owned by coordinator",
+    "native_oci_acceptance": "pending",
+    "browser_review": "coordinator-owned; not performed by this task",
+    "coordinator_real_ssr_reported": "passed"
+  },
+  "previous_releases_verified_unchanged": [
+    "v1.0.0",
+    "v1.0.1",
+    "v1.0.2",
+    "v1.0.3",
+    "v2.0.0"
+  ],
+  "oci_mutations": 0,
+  "manifest_schema_version": 2,
+  "pull_request": "https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1",
+  "required_engine": "Deploy Studio schema 2 with OCI platform, workspace and chat-model selectors",
+  "form": {
+    "fields": 14,
+    "description_characters": 321,
+    "internal_inputs": [
+      "name",
+      "release_tag"
+    ],
+    "image": "/assets/oci-aidp-cloud-migration-lab.png"
+  }
+}
