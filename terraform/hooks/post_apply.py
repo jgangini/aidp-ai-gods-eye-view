@@ -13,7 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
 from native_api import AidpApi, ApiRequestError, ensure_workspace_folder, build_signer, load_oci_config
-from preflight import effective_admin, probe, source_context, installation_identity, verify_catalog_selection
+from preflight import effective_admin, probe, source_context, installation_identity, verify_catalog_selection, bucket_inputs, verify_existing_buckets, regional_storage
 from gods_eye_view_bootstrap import bootstrap_gods_eye_view, operation
 from app.config import Settings
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
@@ -166,10 +166,20 @@ def wait_viewer_health(origin, certificate, deadline, *, client=None, clock=time
             client.close()
 
 
+def verify_bucket_outputs(context):
+    selected, outputs = bucket_inputs(context["inputs"]), context["terraform_outputs"]
+    if (selected["artifacts_bucket_name"] != outputs.get("artifacts_bucket_name")
+            or json.loads(selected["medallion_bucket_names"]) != outputs.get("medallion_bucket_names")
+            or json.loads(selected["bucket_modes"]) != outputs.get("bucket_modes")):
+        raise ValueError("Bucket selections differ from the pinned Terraform outputs")
+
+
 def install(context, config, signer, storage, *, secrets=None, api_factory=AidpApi, bootstrap=bootstrap_gods_eye_view):
     sys.path.insert(0, str(ROOT / "scripts/deployment"))
     from image_assets import inspect_handoff
     inspect_handoff(context, require_archives=True)
+    verify_bucket_outputs(context)
+    verify_existing_buckets(context, config, storage)
     deadline = time.monotonic() + 3400
     import native_api
     native_api._post_apply_deadline = deadline
@@ -234,12 +244,11 @@ def install(context, config, signer, storage, *, secrets=None, api_factory=AidpA
 def main():
     target = Path(os.environ["DEPLOY_STUDIO_OUTPUT"])
     try:
-        import oci
         context = source_context(json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8")))
         config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
         config = {**config, "region": context["region"]}
         signer = build_signer(config)
-        result = install(context, config, signer, oci.object_storage.ObjectStorageClient(config, signer=signer))
+        result = install(context, config, signer, regional_storage(config, signer, context["region"]))
         code = 0
     except HostBootstrapMismatch as error:
         result = {"outputs": {}, "events": [{"level": "error", "message": str(error)}]}

@@ -1,10 +1,77 @@
 """Keep the hook archive inside the actual Deploy Studio source limits."""
 import json
+from collections import Counter
 from pathlib import Path, PurePosixPath
 import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_form_schema2_defines_the_complete_layout_without_legacy_inference():
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == 2
+    form = manifest["form"]
+    groups = form["groups"]
+    assert groups[0]["id"] == "credentials"
+    assert [(item["kind"], item["name"]) for item in groups[0]["items"]] == [
+        ("control", "oci_config"), ("control", "oci_key")]
+    assert len({group["id"] for group in groups}) == len(groups)
+    assert all(group["title"].strip() and group["items"] for group in groups)
+    services = next(group for group in groups if group["id"] == "services")
+    assert [item["name"] for item in services["items"]] == [
+        "oci_region", "compartment_mode", "new_compartment", "existing_compartment"]
+    assert services["items"][0]["span"] == 2
+    references = Counter((item["kind"], item["name"]) for group in groups for item in group["items"])
+    expected = {(kind, field["name"]) for kind, fields in (("field", form["fields"]), ("file", form.get("files", [])))
+        for field in fields}
+    controls = {"oci_config", "oci_key", "oci_region", "compartment_mode", "new_compartment", "existing_compartment"}
+    assert references == Counter({reference: 1 for reference in expected | {("control", name) for name in controls}})
+    for group in groups:
+        for item in group["items"]:
+            assert item.get("span", 1) in (1, 2)
+            if item["kind"] == "control":
+                assert item["label"].strip()
+                if item["name"] == "compartment_mode":
+                    assert [option["value"] for option in item["options"]] == manifest["capabilities"]["compartment_modes"]
+                    assert all(option["label"].strip() for option in item["options"])
+
+
+def test_form_uses_governance_groups_selectors_and_internal_installation_inputs():
+    manifest = json.loads((ROOT / "terraform/deploy-studio.json").read_text(encoding="utf-8"))
+    assert [group["id"] for group in manifest["form"]["groups"]] == [
+        "credentials", "services", "identity", "aidp_platform", "enterprise_ai", "artifacts", "medallion", "additional_resources"]
+    fields = {field["name"]: field for field in manifest["form"]["fields"]}
+    assert {field["type"] for field in fields.values()} <= {"text", "select"}
+    assert not {"name", "release_tag", "create_buckets", "admin_username", "admin_password"} & fields.keys()
+    assert fields["new_aidp_name"]["default"] == "aidp_gods_eye_view"
+    assert fields["new_aidp_name"]["visible_when"] == {"field": "aidp_mode", "equals": "new"}
+    for layer in ("artifacts", "landing", "bronze", "silver", "gold"):
+        mode = "artifacts_mode" if layer == "artifacts" else layer + "_bucket_mode"
+        new = "artifacts_bucket_name" if layer == "artifacts" else layer + "_new_bucket_name"
+        existing = layer + "_existing_bucket_name"
+        assert fields[mode]["default"] == "new"
+        assert fields[mode]["options"] == [{"value": "new", "label": "Create new bucket"}, {"value": "existing", "label": "Use existing bucket"}]
+        assert fields[new]["type"] == "text" and fields[new]["default"] == "oci_" + layer
+        assert fields[new]["visible_when"] == {"field": mode, "equals": "new"}
+        assert fields[existing]["options_source"] == "oci_active_buckets" and fields[existing]["default"] == "oci_" + layer
+        assert fields[existing]["visible_when"] == {"field": mode, "equals": "existing"}
+    medallion = next(group for group in manifest["form"]["groups"] if group["id"] == "medallion")
+    assert medallion["title"] == "Medallion Architecture"
+    assert [item["name"] for item in medallion["items"]] == [name for layer in ("landing", "bronze", "silver", "gold")
+        for name in (layer + "_bucket_mode", layer + "_new_bucket_name", layer + "_existing_bucket_name")]
+    for name, source in (("existing_ai_data_platform_ocid", "oci_aidp_platforms"),
+            ("existing_workspace_key", "oci_aidp_workspaces"), ("agent_model_id", "oci_genai_chat_models")):
+        assert fields[name]["options_source"] == source
+    assert fields["existing_catalog_key"]["visible_when"] == {"field": "aidp_mode", "equals": "existing"}
+    runtime = {field["name"]: field for field in manifest["preflight"]["runtime_fields"]}
+    assert runtime["name"]["default"] == "aidp-gods-eye-view"
+    assert "name" in manifest["preflight"]["output_inputs"]
+    assert {"bucket_modes", "artifacts_bucket_name"} <= set(manifest["preflight"]["output_inputs"])
+    presentation = manifest["presentation"]
+    assert presentation["image"] == "/assets/oci-aidp-cloud-migration-lab.png" and presentation["image_alt"]
+    assert "https://github.com/bilawalsidhu/gods-eye-view" in presentation["summary"]
+    assert 300 <= len(presentation["summary"]) <= 330 and "\n" not in presentation["summary"]
 
 
 def test_runner_archive_is_bounded_and_excludes_viewer_ui_and_corpus_payloads():

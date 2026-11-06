@@ -16,8 +16,10 @@ sys.path.insert(0, str(ROOT / "apps/backend"))
 import bootstrap_credentials as envelope
 from preflight import validate_inputs, verify_administrator, source_context
 from post_apply import InstallationJournal, grant_new_platform_admin, wait_viewer_health, install, catalog
+from post_apply import verify_bucket_outputs
 import gods_eye_view_bootstrap as native
 from types import SimpleNamespace
+from test_bucket_selection import selections
 
 
 def test_domain_and_active_admin_are_exact():
@@ -32,10 +34,18 @@ def test_domain_and_active_admin_are_exact():
 
 
 def test_source_sha_comes_from_runner_metadata_and_cannot_be_replaced_by_form():
-    context = {"source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "commit_sha": "a" * 40}, "inputs": {}}
+    buckets = selections(("new",) * 5)
+    context = {"source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "commit_sha": "a" * 40, "ref": "v2.1.0"}, "inputs": buckets}
     assert source_context(context)["inputs"]["source_commit_sha"] == "a" * 40
+    assert source_context(context)["inputs"]["release_tag"] == "v2.1.0"
+    assert source_context(context)["inputs"]["name"] == "aidp-gods-eye-view"
+    assert source_context({**context, "inputs": {**buckets, "name": "existing-prefix"}})["inputs"]["name"] == "existing-prefix"
     with pytest.raises(ValueError, match="differs"):
         source_context({**context, "inputs": {"source_commit_sha": "b" * 40}})
+    with pytest.raises(ValueError, match="Release tag"):
+        source_context({**context, "inputs": {"release_tag": "v2.0.0"}})
+    with pytest.raises(ValueError, match="stable source"):
+        source_context({**context, "source": {**context["source"], "ref": "main"}})
 
 
 def test_resume_rejects_a_changed_catalog_selection_before_any_request():
@@ -62,13 +72,12 @@ def test_native_bootstrap_reuses_only_the_exact_catalog_already_verified_in_rece
 
 def test_buckets_and_existing_workspace_fail_closed():
     inputs = {"identity_domain_id": "ocid1.domain.oc1..one", "admin_user_ocid": "ocid1.user.oc1..selected",
-        "aidp_mode": "new", "medallion_bucket_names": {layer: layer for layer in ("landing", "bronze", "silver", "gold")},
-        "artifacts_bucket_name": "artifacts"}
+        "aidp_mode": "new", **selections(("new",) * 5)}
     assert validate_inputs(inputs)["aidp_mode"] == "new"
     with pytest.raises(ValueError):
         validate_inputs({**inputs, "aidp_mode": "existing"})
     with pytest.raises(ValueError):
-        validate_inputs({**inputs, "artifacts_bucket_name": "gold"})
+        validate_inputs({**inputs, "artifacts_bucket_name": "selected-gold"})
 
 
 def test_envelope_is_bound_authenticated_and_single_use(tmp_path):
@@ -373,6 +382,48 @@ def test_hidden_compute_cannot_bypass_identity_receipt():
 def test_unconfigured_private_handoff_fails_before_any_cloud_client_or_journal():
     with pytest.raises(ValueError):
         install({}, {}, None, None, secrets={})
+
+
+@pytest.mark.parametrize("field", ["artifacts_bucket_name", "medallion_bucket_names", "bucket_modes"])
+def test_bucket_binding_mismatch_stops_before_native_client_or_journal(monkeypatch, field):
+    import image_assets
+    from preflight import bucket_inputs
+    inputs = selections(("new",) * 5)
+    selected = bucket_inputs(inputs)
+    outputs = {"artifacts_bucket_name": selected["artifacts_bucket_name"],
+        "medallion_bucket_names": json.loads(selected["medallion_bucket_names"]),
+        "bucket_modes": json.loads(selected["bucket_modes"])}
+    context = {"inputs": inputs, "terraform_outputs": outputs}
+    verify_bucket_outputs(context)
+    outputs[field] = "different" if field == "artifacts_bucket_name" else {"landing": "different"}
+    monkeypatch.setattr(image_assets, "inspect_handoff", lambda *_args, **_kw: [])
+    def forbidden_client(*_args, **_kw):
+        pytest.fail("Mismatched bucket bindings must fail before native client or journal creation")
+    with pytest.raises(ValueError, match="pinned Terraform outputs"):
+        install(context, {}, None, object(), api_factory=forbidden_client)
+
+
+def test_bucket_client_is_bound_to_selected_region_and_cannot_follow_redirects(monkeypatch):
+    import oci
+    from oci._vendor import requests
+    from preflight import regional_storage
+    session, calls = requests.Session(), []
+    def client(config, **kwargs):
+        calls.append((config, kwargs))
+        return SimpleNamespace(base_client=SimpleNamespace(session=session))
+    monkeypatch.setattr(oci.object_storage, "ObjectStorageClient", client)
+    original = {"region": "us-phoenix-1", "tenancy": "selected-tenancy"}
+    signer = object()
+    regional_storage(original, signer, "us-ashburn-1")
+    assert original["region"] == "us-phoenix-1"
+    assert calls == [({**original, "region": "us-ashburn-1"}, {"signer": signer})]
+    response = requests.Response()
+    response.status_code, response.url, response._content = 301, "https://objectstorage.us-ashburn-1.oraclecloud.com/n/ns/b/selected", b""
+    response.headers["Location"] = "https://objectstorage.us-phoenix-1.oraclecloud.com/n/ns/b/selected"
+    prepared = session.prepare_request(requests.Request("GET", response.url))
+    with pytest.raises(requests.exceptions.TooManyRedirects):
+        list(session.resolve_redirects(response, prepared))
+    session.close()
 
 
 @pytest.mark.parametrize("failure", ["source_ref", "missing_archive", "corrupt_archive"])

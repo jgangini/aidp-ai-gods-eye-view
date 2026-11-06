@@ -51,6 +51,14 @@ variable "name" {
     error_message = "Use a stable resource prefix."
   }
 }
+variable "new_aidp_name" {
+  type    = string
+  default = null
+  validation {
+    condition     = var.new_aidp_name == null || can(regex("^[A-Za-z0-9][A-Za-z0-9._ -]{0,254}$", var.new_aidp_name))
+    error_message = "Use an AIDP display name of 1 to 255 letters, digits, spaces, dots, underscores or hyphens."
+  }
+}
 variable "medallion_bucket_names" {
   type = string
   validation {
@@ -59,9 +67,16 @@ variable "medallion_bucket_names" {
   }
 }
 variable "artifacts_bucket_name" { type = string }
-variable "create_buckets" {
-  type    = bool
-  default = true
+variable "bucket_modes" {
+  type = string
+  validation {
+    condition = try(
+      toset(keys(jsondecode(var.bucket_modes))) == toset(["landing", "bronze", "silver", "gold", "artifacts"]) &&
+      alltrue([for mode in values(jsondecode(var.bucket_modes)) : contains(["new", "existing"], mode)]),
+      false
+    )
+    error_message = "Select new or existing independently for all five buckets."
+  }
 }
 variable "availability_domain" { type = string }
 variable "image_ocid" { type = string }
