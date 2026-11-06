@@ -1,14 +1,12 @@
 {
   "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
-  "proposed_tag": "v2.0.1",
   "commit": "68412c3c609b8b140224e863477873cb49e947b5",
   "release_id": 436798697,
-  "draft_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-2bca1fc694667782c753",
-  "draft": true,
-  "immutable": false,
+  "draft": false,
+  "immutable": true,
   "prerelease": false,
-  "published": false,
-  "publication_status": "Blocked by automatic approval review: this specific v2.0.1 release, source commit and six-asset payload require recognized authorization",
+  "published": true,
+  "publication_status": "Published after explicit user approval; tag and six asset IDs, sizes and SHA-256 verified",
   "assets": {
     "gods-eye-view-api-image-amd64.tar.gz": {
       "asset_id": 717966638,
@@ -175,5 +173,10 @@
       "release_tag"
     ],
     "image": "/assets/oci-aidp-cloud-migration-lab.png"
-  }
+  },
+  "tag": "v2.0.1",
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.0.1",
+  "published_at": "2026-11-06T17:44:03Z",
+  "tag_commit_sha": "68412c3c609b8b140224e863477873cb49e947b5",
+  "public_anonymous_api_verified": true
 }

@@ -1,4 +1,4 @@
-# Formulario alineado con Governance: candidato v2.0.1
+# Formulario alineado con Governance: v2.0.1 publicada
 
 Fuente: `68412c3c609b8b140224e863477873cb49e947b5`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42262217605](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42262217605). El contrato vigente está en [Instalación e identidad](../contracts.md).
 
@@ -20,10 +20,10 @@ El manifiesto schema 2 organiza credenciales, servicios OCI, Identity, AIDP, Age
 
 ## Paquete y publicación
 
-El [borrador v2.0.1](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-2bca1fc694667782c753), ID `436798697`, apunta al SHA de fuente anterior. Sus seis IDs, tamaños y SHA-256 remotos coinciden con los bytes locales. Los gzip son los de CI; los JSON ligan componente, plataforma, ID de imagen, tag y SHA. El [recibo del candidato](../releases/v2.0.1-candidate.json) contiene los valores exactos.
+La [release v2.0.1](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.0.1), ID `436798697`, está publicada e inmutable y apunta al SHA de fuente anterior. Sus seis IDs, tamaños y SHA-256 remotos coinciden con el paquete aprobado. Los gzip son los de CI; los JSON ligan componente, plataforma, ID de imagen, tag y SHA. El [recibo publicado](../releases/v2.0.1-candidate.json) conserva su nombre de archivo original y contiene los valores exactos y el estado actual.
 
 El handoff pasó con los seis assets reales partiendo de un contexto sin tag ni prefijo operativos: el normalizador los deriva antes de inspeccionar. CAS simulado realizó tres cargas y ninguna al repetir, sin OCI. La revisión estática examinó tres imágenes, 34 capas únicas, 80.909 archivos y 1.565.684.520 bytes, sin ejecutarlas. Los 68 archivos con coincidencias conocidas conservaron su hash; seis archivos `.pyc` nuevos contienen payloads compilados ya revisados, con diferencias solo en sus encabezados de 16 bytes. No se imprimieron valores candidatos ni se ejecutó el bytecode.
 
-**La publicación fue rechazada por la revisión automática**, que no reconoció autorización específica para este tag, commit y payload de seis assets. No se reintentó ni se solicitó otra aprobación al usuario desde este chat. La candidata sigue como draft, sin inmutabilidad todavía, para el gate de publicación del coordinador. Las cinco releases previas conservaron IDs, assets, tamaños, digests e inmutabilidad.
+**La publicación se completó tras la aprobación explícita del usuario** para este tag, commit, borrador y seis assets, resolviendo el rechazo automático inicial. La API confirma `draft=false`, `immutable=true`, sin prerelease; el tag resuelve a `68412c3c609b8b140224e863477873cb49e947b5`. Las APIs del repositorio y de la release devolvieron HTTP 200 sin autenticación; el repositorio es público. Los seis IDs, tamaños y digests permanecen idénticos a los aprobados. Las cinco releases previas conservaron sus assets e inmutabilidad.
 
 Limitaciones: Browser e instalación reales pendientes; la existencia de buckets reutilizados no tiene una nueva comprobación preflight en esta tarea. Continúan los [avisos heredados de dependencias](native-dependency-review.md) y el gate Sentrux no aprobado. La publicación o una prueba local no acreditan conversación del agente ni aceptación OCI.
