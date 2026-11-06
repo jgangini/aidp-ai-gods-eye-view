@@ -181,8 +181,27 @@ def test_hidden_compute_cannot_bypass_identity_receipt():
 
 
 def test_unconfigured_private_handoff_fails_before_any_cloud_client_or_journal():
-    with pytest.raises(RuntimeError, match="control-plane artifact handoff"):
+    with pytest.raises(ValueError):
         install({}, {}, None, None, secrets={})
+
+
+@pytest.mark.parametrize("failure", ["source_ref", "missing_archive", "corrupt_archive"])
+def test_invalid_private_handoff_stops_install_before_native_client(tmp_path, failure):
+    from test_image_assets import local_stage_context
+    context = local_stage_context(tmp_path)
+    if failure == "source_ref":
+        context["source"]["ref"] = "v9.9.9"
+    else:
+        asset = context["release_assets"]["assets"]["gods-eye-view-gateway-image-amd64.tar.gz"]
+        if failure == "missing_archive":
+            del asset["path"]
+        else:
+            path = Path(asset["path"])
+            path.write_bytes(b"x" * path.stat().st_size)
+    def forbidden_client(*_args, **_kwargs):
+        pytest.fail("Invalid private assets must fail before native client or journal creation")
+    with pytest.raises(ValueError):
+        install(context, {}, None, None, secrets={}, api_factory=forbidden_client)
 
 
 def test_viewer_health_requires_success_and_bounded_wait():

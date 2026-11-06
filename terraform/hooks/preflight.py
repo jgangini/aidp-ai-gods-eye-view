@@ -18,10 +18,6 @@ from app.services.oci.identity import IdentityClient
 from app.services.oci.aidp import AidpClient
 
 
-class ArtifactHandoffPending(RuntimeError):
-    pass
-
-
 def source_context(context):
     source = context.get("source", {})
     commit = source.get("commit_sha", "")
@@ -144,22 +140,16 @@ def main():
         context = source_context(json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8")))
         config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
         sys.path.insert(0, str(ROOT / "scripts/deployment"))
-        from image_assets import inspect_release
-        secrets = json.loads(Path(os.environ["DEPLOY_STUDIO_SECRETS"]).read_text(encoding="utf-8"))["inputs"]
-        if not secrets.get("release_download_token"):
-            raise ArtifactHandoffPending("Private image delivery awaits the coordinator's control-plane artifact handoff; no hook token is assumed")
-        inspect_release(context, secrets)
+        from image_assets import inspect_handoff
+        inspect_handoff(context)
         result = probe(context, config)
         result["events"].append({"name": "Private release metadata", "status": "passed",
             "message": "Immutable source, access and image manifests verified; archive bytes are checked before VM delivery"})
         code = 0
-    except ArtifactHandoffPending as pending:
-        result = {"inputs": {}, "events": [{"name": "Private image handoff", "status": "failed", "message": str(pending)}]}
-        code = 1
     except Exception:
         # HTTP bodies/config may carry sensitive information; keep the runner event bounded.
         result = {"inputs": {}, "events": [{"name": "Administrator authorization", "status": "failed",
-            "message": "Identity, workspace or effective permissions could not be verified"}]}
+            "message": "Private release handoff, identity, workspace or effective permissions could not be verified"}]}
         code = 1
     result_path.write_text(json.dumps(result) + "\n", encoding="utf-8")
     result_path.chmod(0o600)

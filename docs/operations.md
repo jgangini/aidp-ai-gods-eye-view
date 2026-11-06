@@ -8,7 +8,7 @@ La VM ejecuta gateway, API y visor mediante Compose. Solo se publica TLS 443. El
 
 Ese rollback no revierte esquema Gold, IAM, claves OCI ni certificados TLS. La primera extracción conserva formatos y operador; rotaciones o cambios incompatibles requieren otra operación explícita, con snapshot y recuperación revisados. No reutilizar una imagen anterior con un esquema o identidad incompatibles.
 
-Un error o timeout conserva el recibo y recursos. Resume revalida el mismo administrador y destino; rechaza otro binding. Un catálogo creado cuyo API no devolvió identidad exige reconciliar el request antes de Resume, sin buscar/adoptar por nombre. Los límites de recuperación de operaciones nativas asíncronas y del arranque inicial deben aceptarse en OCI antes de publicar una release.
+Un error o timeout conserva el recibo y recursos. Resume revalida el mismo administrador y destino; rechaza otro binding. Un catálogo creado cuyo API no devolvió identidad exige reconciliar el request antes de Resume, sin buscar/adoptar por nombre. Los límites de recuperación de operaciones nativas asíncronas y del arranque inicial deben aceptarse en OCI antes de promover producción.
 
 La calidad del agente requiere conversaciones de la revisión instalada y evidencia Gold de esa publicación. Run/Pause de captura no detiene compute; no borrar checkpoints ni reiniciar writers para esconder un error. Los costes y capacidad de compute no fueron medidos durante la extracción.
 

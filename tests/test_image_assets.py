@@ -1,4 +1,5 @@
 """Exercise authenticated release transfer and conditional storage without network or cloud."""
+import copy
 import hashlib
 import importlib.util
 import json
@@ -305,3 +306,200 @@ def test_unexpected_extra_release_assets_are_rejected(method):
         else:
             with release.client() as client:
                 images.inspect_release({"inputs":CONTEXT["inputs"]},{"release_download_token":TOKEN},client=client)
+
+
+def local_handoff(tmp_path, *, archives=False):
+    release = Release()
+    assets = {}
+    for item in release.release["assets"]:
+        asset = {"asset_id":item["id"], "size":item["size"], "sha256":item["digest"][7:]}
+        if item["name"].endswith(".json") or archives:
+            path = tmp_path / item["name"]
+            path.write_bytes(release.bodies[item["id"]])
+            asset["path"] = str(path)
+        assets[item["name"]] = asset
+    return {"inputs":copy.deepcopy(CONTEXT["inputs"]),
+        "source":{"repository":images.REPOSITORY,"commit_sha":COMMIT,"ref":TAG},
+        "release_assets":{"schema_version":1,"repository":images.REPOSITORY,"ref":TAG,
+            "commit_sha":COMMIT,"release_id":100,"assets":assets}}
+
+
+def local_stage_context(tmp_path):
+    context = local_handoff(tmp_path, archives=True)
+    context["terraform_outputs"] = copy.deepcopy(CONTEXT["terraform_outputs"])
+    return context
+
+
+def no_network(*args, **kwargs):
+    raise AssertionError("Local release handoff must not use HTTP or credentials")
+
+
+def test_local_preflight_validates_three_manifests_with_tar_metadata_only(tmp_path, monkeypatch):
+    context = local_handoff(tmp_path)
+    monkeypatch.setattr(images.httpx, "Client", no_network)
+    monkeypatch.setattr(images, "_download", no_network)
+    descriptors = images.inspect_handoff(context)
+    assert {item["component"] for item in descriptors} == {"api","viewer","gateway"}
+    assert all("path" not in item for name,item in context["release_assets"]["assets"].items() if name.endswith(".tar.gz"))
+    assert all(set(item) == {"component","object_name","archive_sha256","image_id","image_tag"} for item in descriptors)
+    assert str(tmp_path) not in json.dumps(descriptors)
+    with pytest.raises(ValueError,match="regular file"):
+        images.inspect_handoff(context,require_archives=True)
+
+
+def test_local_install_and_stage_verify_all_tar_bytes_without_network(tmp_path, monkeypatch):
+    context = local_stage_context(tmp_path)
+    monkeypatch.setattr(images.httpx, "Client", no_network)
+    monkeypatch.setattr(images, "_download", no_network)
+    expected = images.inspect_handoff(context,require_archives=True)
+    storage = Storage()
+    assert images.stage_handoff(context,storage) == expected
+    assert len(storage.uploads) == 3
+    storage.uploads.clear()
+    assert images.stage_handoff(context,storage) == expected and storage.uploads == []
+
+
+@pytest.mark.parametrize("location,field,value", [
+    ("source","repository","https://github.com/other/product"),
+    ("source","commit_sha","b" * 40),
+    ("source","ref","v9.9.9"),
+    ("inputs","source_commit_sha","b" * 40),
+    ("inputs","release_tag","v1.2.3-rc1"),
+    ("release_assets","schema_version",True),
+    ("release_assets","schema_version",2),
+    ("release_assets","repository","https://github.com/other/product"),
+    ("release_assets","commit_sha","b" * 40),
+    ("release_assets","ref","v9.9.9"),
+    ("release_assets","release_id",True),
+    ("release_assets","release_id",0),
+])
+def test_handoff_source_bindings_fail_closed_without_upload(tmp_path, location, field, value):
+    context = local_stage_context(tmp_path)
+    context[location][field] = value
+    storage = Storage()
+    with pytest.raises(ValueError,match="handoff"):
+        images.stage_handoff(context,storage)
+    assert storage.objects == {} and storage.uploads == []
+
+
+@pytest.mark.parametrize("change", ["missing","extra","duplicate_id","bad_sha","bad_size","unknown_field"])
+def test_handoff_has_exact_six_distinct_assets_with_strict_metadata(tmp_path, change):
+    context = local_handoff(tmp_path)
+    assets = context["release_assets"]["assets"]
+    first,second = list(assets)[:2]
+    if change == "missing": assets.pop(first)
+    elif change == "extra": assets["unreviewed.txt"] = {}
+    elif change == "duplicate_id": assets[second]["asset_id"] = assets[first]["asset_id"]
+    elif change == "bad_sha": assets[first]["sha256"] = "sha256:" + "a" * 64
+    elif change == "bad_size": assets[first]["size"] = True
+    else: assets[first]["url"] = "https://untrusted.example/private"
+    with pytest.raises(ValueError,match="handoff"):
+        images.inspect_handoff(context)
+
+
+@pytest.mark.parametrize("component,limit", [("gods-eye-view-api",512 * 1024 ** 2),
+    ("gods-eye-view",1024 ** 3),("gods-eye-view-gateway",128 * 1024 ** 2)])
+def test_handoff_tar_component_caps_apply_to_both_phases(tmp_path, component, limit):
+    context = local_stage_context(tmp_path)
+    context["release_assets"]["assets"][component + "-image-amd64.tar.gz"]["size"] = limit + 1
+    with pytest.raises(ValueError,match="size"):
+        images.inspect_handoff(context)
+    storage = Storage()
+    with pytest.raises(ValueError,match="size"):
+        images.stage_handoff(context,storage)
+    assert not storage.uploads
+
+
+@pytest.mark.parametrize("invalid", ["relative","directory","missing"])
+def test_local_manifest_paths_are_absolute_regular_existing_files_and_errors_are_private(tmp_path, invalid):
+    context = local_handoff(tmp_path)
+    asset = context["release_assets"]["assets"]["gods-eye-view-api-release.json"]
+    private = tmp_path / "PRIVATE-PATH-MARKER"
+    if invalid == "relative": asset["path"] = "PRIVATE-PATH-MARKER.json"
+    elif invalid == "directory": private.mkdir(); asset["path"] = str(private)
+    else: asset["path"] = str(private)
+    with pytest.raises(ValueError,match="regular file") as error:
+        images.inspect_handoff(context)
+    assert "PRIVATE-PATH-MARKER" not in str(error.value)
+
+
+def test_local_handoff_rejects_symlink_before_reading_manifest(tmp_path):
+    context = local_handoff(tmp_path)
+    asset = context["release_assets"]["assets"]["gods-eye-view-api-release.json"]
+    link = tmp_path / "linked-manifest.json"
+    try:
+        link.symlink_to(asset["path"])
+    except OSError as error:
+        if getattr(error,"winerror",None) == 1314:
+            pytest.skip("Host user lacks Windows symlink creation privilege")
+        raise
+    asset["path"] = str(link)
+    with pytest.raises(ValueError,match="symbolic links"):
+        images.inspect_handoff(context)
+
+
+@pytest.mark.parametrize("asset_name", ["gods-eye-view-api-release.json","gods-eye-view-gateway-image-amd64.tar.gz"])
+def test_bad_local_bytes_cause_zero_uploads_even_for_the_last_tar(tmp_path, asset_name):
+    context = local_stage_context(tmp_path)
+    asset = context["release_assets"]["assets"][asset_name]
+    Path(asset["path"]).write_bytes(b"x" * asset["size"])
+    storage = Storage()
+    with pytest.raises(ValueError,match="checksum"):
+        images.stage_handoff(context,storage)
+    assert storage.uploads == [] and storage.objects == {}
+    with pytest.raises(ValueError,match="checksum"):
+        images.inspect_handoff(context)
+
+
+def test_manifest_semantics_are_rechecked_after_local_hash_validation(tmp_path):
+    context = local_stage_context(tmp_path)
+    asset = context["release_assets"]["assets"]["gods-eye-view-gateway-release.json"]
+    path = Path(asset["path"])
+    manifest = json.loads(path.read_text())
+    manifest["image"]["platform"] = "linux/arm64"
+    body = json.dumps(manifest).encode()
+    path.write_bytes(body)
+    asset.update(size=len(body),sha256=hashlib.sha256(body).hexdigest())
+    storage = Storage()
+    with pytest.raises(ValueError,match="manifest"):
+        images.stage_handoff(context,storage)
+    assert storage.uploads == [] and storage.objects == {}
+
+
+def test_postapply_requires_all_archive_paths_and_detects_size_change(tmp_path):
+    context = local_stage_context(tmp_path)
+    archive = context["release_assets"]["assets"]["gods-eye-view-gateway-image-amd64.tar.gz"]
+    path = archive.pop("path")
+    storage = Storage()
+    with pytest.raises(ValueError,match="regular file"):
+        images.stage_handoff(context,storage)
+    archive["path"] = path
+    Path(path).write_bytes(b"different-size")
+    with pytest.raises(ValueError,match="size"):
+        images.stage_handoff(context,storage)
+    assert storage.objects == {} and storage.uploads == []
+
+
+def test_local_staging_preserves_cas_collision_and_never_overwrites(tmp_path):
+    context = local_stage_context(tmp_path)
+    storage = Storage()
+    storage.collide = lambda body,kwargs: (b"conflicting bytes",{})
+    with pytest.raises(ValueError,match="conflicts"):
+        images.stage_handoff(context,storage)
+    assert storage.uploads == []
+    assert next(iter(storage.objects.values()))[0] == b"conflicting bytes"
+
+
+def test_staging_uploads_verified_snapshots_when_original_paths_change_after_validation(tmp_path):
+    context = local_stage_context(tmp_path)
+    archive = context["release_assets"]["assets"]["gods-eye-view-gateway-image-amd64.tar.gz"]
+    original = Path(archive["path"]).read_bytes()
+    class MutatingStorage(Storage):
+        def put_object(self,*args,**kwargs):
+            Path(archive["path"]).write_bytes(b"modified after validation")
+            return super().put_object(*args,**kwargs)
+    storage = MutatingStorage()
+    result = images.stage_handoff(context,storage)
+    viewer = next(item for item in result if item["component"] == "gateway")
+    assert storage.objects[viewer["object_name"]][0] == original
+    assert len(storage.uploads) == 3

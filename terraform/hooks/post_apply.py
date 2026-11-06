@@ -13,7 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
 from native_api import AidpApi, ApiRequestError, ensure_workspace_folder, build_signer, load_oci_config
-from preflight import effective_admin, probe, source_context, ArtifactHandoffPending
+from preflight import effective_admin, probe, source_context
 from gods_eye_view_bootstrap import bootstrap_gods_eye_view, operation
 from app.config import Settings
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
@@ -164,8 +164,9 @@ def wait_viewer_health(origin, certificate, deadline, *, client=None, clock=time
 
 
 def install(context, config, signer, storage, *, secrets=None, api_factory=AidpApi, bootstrap=bootstrap_gods_eye_view):
-    if not secrets or not secrets.get("release_download_token"):
-        raise ArtifactHandoffPending("Private image delivery awaits the coordinator's control-plane artifact handoff; no hook token is assumed")
+    sys.path.insert(0, str(ROOT / "scripts/deployment"))
+    from image_assets import inspect_handoff
+    inspect_handoff(context, require_archives=True)
     deadline = time.monotonic() + 3400
     import native_api
     native_api._post_apply_deadline = deadline
@@ -238,9 +239,6 @@ def main():
         secrets = json.loads(Path(os.environ["DEPLOY_STUDIO_SECRETS"]).read_text(encoding="utf-8"))["inputs"]
         result = install(context, config, signer, oci.object_storage.ObjectStorageClient(config, signer=signer), secrets=secrets)
         code = 0
-    except ArtifactHandoffPending as pending:
-        result = {"outputs": {}, "events": [{"level": "error", "message": str(pending)}]}
-        code = 1
     except Exception:
         result = {"outputs": {}, "events": [{"level": "error", "message": "Installation stopped; preserve the durable operation receipt and reconcile before Resume"}]}
         code = 1

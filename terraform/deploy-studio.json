@@ -273,7 +273,39 @@
         "required": true
       }
     ],
-    "secret_inputs": []
+    "secret_inputs": [],
+    "release_assets": [
+      {
+        "name": "gods-eye-view-api-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-api-image-amd64.tar.gz",
+        "max_bytes": 536870912,
+        "download": false
+      },
+      {
+        "name": "gods-eye-view-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-image-amd64.tar.gz",
+        "max_bytes": 1073741824,
+        "download": false
+      },
+      {
+        "name": "gods-eye-view-gateway-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-gateway-image-amd64.tar.gz",
+        "max_bytes": 134217728,
+        "download": false
+      }
+    ]
   },
   "post_apply": {
     "entrypoint": "terraform/hooks/post_apply.py",
@@ -301,6 +333,38 @@
     "secret_inputs": [
       "tls_certificate",
       "tls_key"
+    ],
+    "release_assets": [
+      {
+        "name": "gods-eye-view-api-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-api-image-amd64.tar.gz",
+        "max_bytes": 536870912,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-image-amd64.tar.gz",
+        "max_bytes": 1073741824,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-gateway-release.json",
+        "max_bytes": 65536,
+        "download": true
+      },
+      {
+        "name": "gods-eye-view-gateway-image-amd64.tar.gz",
+        "max_bytes": 134217728,
+        "download": true
+      }
     ]
   }
 }

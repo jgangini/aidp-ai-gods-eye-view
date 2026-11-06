@@ -59,8 +59,8 @@ def runtime_environment(context, assets):
 def deliver(context, config, signer, storage, secrets):
     import oci
     outputs = context["terraform_outputs"]
-    from image_assets import stage_images
-    assets = stage_images(context, secrets, storage)
+    from image_assets import stage_handoff
+    assets = stage_handoff(context, storage)
     expected = binding(context["deployment_id"], config["user"], config["fingerprint"])
     client = oci.compute_instance_agent.ComputeInstanceAgentClient(config, signer=signer)
     public = fetch_bootstrap_public_key(client, oci,

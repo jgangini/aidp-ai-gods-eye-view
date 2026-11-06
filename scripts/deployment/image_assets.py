@@ -1,9 +1,12 @@
 """Stage verified private release images without delivering GitHub credentials to a VM."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import json
+import os
 import re
+import stat
 import tempfile
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -17,6 +20,8 @@ ALLOWED_HOSTS = frozenset({"api.github.com", "github.com", "objects.githubuserco
 MAX_IMAGE_BYTES = 4 * 1024 ** 3
 MAX_MANIFEST_BYTES = 65536
 MAX_METADATA_BYTES = 2 * 1024 ** 2
+HANDOFF_IMAGE_LIMITS = {"gods-eye-view-api": 512 * 1024 ** 2,
+    "gods-eye-view": 1024 ** 3, "gods-eye-view-gateway": 128 * 1024 ** 2}
 SHA = re.compile(r"[0-9a-f]{40}")
 SHA256 = re.compile(r"[0-9a-f]{64}")
 TAG = re.compile(r"v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
@@ -276,3 +281,143 @@ def stage_images(context, secrets, storage, client=None):
     finally:
         if owned_client:
             client.close()
+
+
+def _local_path(value):
+    """Reject symlinks/reparse points, including directory components, before opening."""
+    try:
+        if not isinstance(value, str) or not value or "\x00" in value:
+            raise ValueError()
+        path = Path(value)
+        if not path.is_absolute() or ".." in path.parts:
+            raise ValueError()
+        initial = None
+        for component in (path, *path.parents):
+            info = component.lstat()
+            if (stat.S_ISLNK(info.st_mode)
+                    or getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)):
+                raise ValueError()
+            if initial is None:
+                initial = info
+        if not stat.S_ISREG(initial.st_mode):
+            raise ValueError()
+        return path, initial
+    except (OSError, ValueError):
+        raise ValueError("A local release asset must be an absolute regular file without symbolic links") from None
+
+
+def _handoff_metadata(context, *, require_archives):
+    """Revalidate the trusted runner handoff against the exact product/source bindings."""
+    if not isinstance(context, dict) or type(require_archives) is not bool:
+        raise ValueError("Release handoff context and verification mode are invalid")
+    inputs, source, handoff = (context.get(name) for name in ("inputs", "source", "release_assets"))
+    if not all(isinstance(value, dict) for value in (inputs, source, handoff)):
+        raise ValueError("Release handoff, source and inputs are required")
+    tag, commit = inputs.get("release_tag"), inputs.get("source_commit_sha")
+    if (not isinstance(tag, str) or not TAG.fullmatch(tag) or not isinstance(commit, str) or not SHA.fullmatch(commit)
+            or source.get("repository") != REPOSITORY or source.get("commit_sha") != commit or source.get("ref") != tag
+            or set(handoff) != {"schema_version", "repository", "ref", "commit_sha", "release_id", "assets"}
+            or type(handoff.get("schema_version")) is not int or handoff["schema_version"] != 1
+            or handoff.get("repository") != REPOSITORY or handoff.get("ref") != tag
+            or handoff.get("commit_sha") != commit or type(handoff.get("release_id")) is not int
+            or handoff["release_id"] <= 0):
+        raise ValueError("Release handoff does not match the selected product, stable tag or source SHA")
+    expected = {component + suffix: limit for component in COMPONENTS.values()
+        for suffix, limit in (("-release.json", MAX_MANIFEST_BYTES), ("-image-amd64.tar.gz", HANDOFF_IMAGE_LIMITS[component]))}
+    assets = handoff.get("assets")
+    if not isinstance(assets, dict) or set(assets) != set(expected):
+        raise ValueError("Release handoff must contain exactly six component assets")
+    selected, ids = {}, set()
+    for name, maximum in expected.items():
+        asset = assets[name]
+        if (not isinstance(asset, dict) or not {"asset_id", "size", "sha256"}.issubset(asset)
+                or set(asset) - {"asset_id", "size", "sha256", "path"}
+                or type(asset.get("asset_id")) is not int or asset["asset_id"] <= 0 or asset["asset_id"] in ids
+                or type(asset.get("size")) is not int or not 0 < asset["size"] <= maximum
+                or not isinstance(asset.get("sha256"), str) or not SHA256.fullmatch(asset["sha256"])):
+            raise ValueError("Release handoff asset identity, size or checksum is invalid")
+        ids.add(asset["asset_id"])
+        if name.endswith(".json") or require_archives or "path" in asset:
+            path, info = _local_path(asset.get("path"))
+            if info.st_size != asset["size"]:
+                raise ValueError("Local release asset size does not match handoff metadata")
+        else:
+            path = None
+        selected[name] = {**asset, "path": path, "limit": maximum}
+    return tag, commit, selected
+
+
+def _copy_local(asset, destination):
+    """Verify a bounded snapshot so later source-path changes cannot affect uploads."""
+    path, initial = _local_path(str(asset["path"]))
+    try:
+        flags = (os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0))
+        with os.fdopen(os.open(path, flags), "rb") as source:
+            opened = os.fstat(source.fileno())
+            if ((opened.st_dev, opened.st_ino) != (initial.st_dev, initial.st_ino)
+                    or not stat.S_ISREG(opened.st_mode) or opened.st_size != asset["size"]):
+                raise ValueError("Local release asset changed before verification")
+            total, checksum = 0, hashlib.sha256()
+            with destination.open("wb") as output:
+                while chunk := source.read(1024 * 1024):
+                    total += len(chunk)
+                    if total > asset["size"] or total > asset["limit"]:
+                        raise ValueError("Local release asset exceeds its size limit")
+                    checksum.update(chunk)
+                    output.write(chunk)
+            after = os.fstat(source.fileno())
+            if total != asset["size"] or after.st_size != opened.st_size or after.st_mtime_ns != opened.st_mtime_ns:
+                raise ValueError("Local release asset changed during verification")
+            if checksum.hexdigest() != asset["sha256"]:
+                raise ValueError("Local release asset checksum mismatch")
+    except OSError:
+        raise ValueError("Local release asset could not be read safely") from None
+
+
+def _handoff_descriptors(root, selected, tag, commit):
+    descriptors = []
+    for key, component in COMPONENTS.items():
+        try:
+            document = json.loads((root / (component + "-release.json")).read_text(encoding="utf-8"))
+        except (OSError, ValueError, UnicodeError):
+            raise ValueError("Invalid local release image manifest") from None
+        archive_name = component + "-image-amd64.tar.gz"
+        image = _manifest(document, component, tag, commit, selected[archive_name]["sha256"])
+        descriptors.append({"component": key, "object_name": "releases/" + commit + "/" + archive_name,
+            "archive_sha256": selected[archive_name]["sha256"], "image_id": image["image_id"], "image_tag": image["image_tag"]})
+    return descriptors
+
+
+@contextmanager
+def _verified_handoff(context, *, require_archives):
+    tag, commit, selected = _handoff_metadata(context, require_archives=require_archives)
+    with tempfile.TemporaryDirectory(prefix="gods-eye-view-handoff-") as directory:
+        root = Path(directory)
+        for name, asset in selected.items():
+            if asset["path"] is not None:
+                _copy_local(asset, root / name)
+        yield root, _handoff_descriptors(root, selected, tag, commit), selected
+
+
+def inspect_handoff(context, *, require_archives=False):
+    """Verify all supplied bytes without network/storage; require all TARs before install."""
+    with _verified_handoff(context, require_archives=require_archives) as (_, descriptors, _selected):
+        return descriptors
+
+
+def stage_handoff(context, storage):
+    """Verify all six local assets before conditionally staging the three archive snapshots."""
+    outputs = context.get("terraform_outputs") if isinstance(context, dict) else None
+    if not isinstance(outputs, dict):
+        raise ValueError("The selected artifacts bucket and namespace are required")
+    namespace, bucket = outputs.get("objectstorage_namespace"), outputs.get("artifacts_bucket_name")
+    if (not isinstance(namespace, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", namespace)
+            or not isinstance(bucket, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,256}", bucket)):
+        raise ValueError("The selected artifacts bucket and namespace are required")
+    with _verified_handoff(context, require_archives=True) as (root, descriptors, selected):
+        for descriptor in descriptors:
+            name = descriptor["object_name"].rsplit("/", 1)[1]
+            _upload(storage, namespace, bucket, descriptor["object_name"], root / name,
+                descriptor["archive_sha256"], selected[name]["size"])
+        return descriptors
