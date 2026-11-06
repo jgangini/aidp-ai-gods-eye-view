@@ -1,15 +1,32 @@
-# Assets de imágenes y sustitución del updater combinado
+# Releases e imágenes
 
-El contrato operativo actual utiliza `scripts/release/package_candidate.py`, `scripts/deployment/image_assets.py`, `image_assets_vm.py` y `docker/bootstrap.sh`. El empaquetador genera tres archivos gzip y tres manifiestos schema 1/updater 1; cada manifiesto vincula repositorio, release, commit, archivo SHA-256, plataforma, tag canónico e ID inmutable de imagen.
+Las [releases públicas](https://github.com/jgangini/aidp-ai-gods-eye-view/releases) distribuyen tres imágenes `linux/amd64`: API, visor y gateway. Una release instalable debe ser estable `vMAJOR.MINOR.PATCH`, inmutable, sin draft/prerelease y apuntar al mismo commit que la fuente seleccionada en Deploy Studio. No instalar desde una rama móvil ni mezclar `release_tag` y ref distintos.
 
-El manifiesto declara los seis assets al control plane, dueño de la descarga autenticada. Los hooks consumen `context.release_assets` con metadata y rutas verificadas, sin tokens GitHub: preflight revalida tres JSON y post-apply verifica además los tres gzip antes de publicar mediante CAS. El [contrato de handoff](private-artifact-handoff.md) documenta los límites y bindings. La VM valida bytes y contenido/plataforma tras la carga, sin credenciales GitHub/registro. `candidate` sirve para artifacts CI y se rechaza como release instalable. La primera release privada estable inmutable está autorizada para la aceptación coordinada; su publicación no acredita instalación nativa.
+## Contenido
 
-Los antiguos `scripts/release/load_release_image.py` y `gods_eye_view_release_update.py` pertenecían al flujo que actualizaba solo el visor conectado al portal. Se retiran de este destino después de comprobar que no hay consumidores de producto; permanecen recuperables en el commit de origen congelado y en la procedencia de extracción. `vm_release_updater.py` conserva únicamente constantes de identidad y validación semántica utilizadas por el empaquetador.
+Cada componente aporta un gzip Docker y un manifiesto JSON: exactamente los seis nombres del [contrato de entrega](private-artifact-handoff.md). Los JSON schema 1/updater_protocol 1 fijan repositorio, tag, commit, archivo SHA-256, plataforma, tag canónico e ID inmutable de imagen. El consumidor revalida metadata, archivos y contenido antes de activar.
 
-Sustitutos verificables: `tests/test_image_assets.py` (autenticación/redirects/repositorio/release/SHA/colisiones CAS), `tests/test_image_assets_vm.py` (hash antes de cargar, ID y plataforma después), `tests/test_release_candidate.py` (streaming/hash/gzip/tag y fallos de proceso) y `docker/tests/bootstrap-rollback.sh` (configuración e imágenes del mismo recibo). No se eliminan estas comprobaciones para obtener un resultado verde. El rollback se prueba sin mutar servicios compartidos; la aceptación nativa continúa pendiente.
+El bundle de bootstrap de VM es otro artifact, calculado desde el código y publicado en Object Storage por el hook. No se adjunta como séptimo asset.
 
-Release inicial publicada: [`v1.0.0`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.0), commit `219014036e3fbba1d808f5f10822aa786bf607f6`, ID `436010655`, privada, inmutable, sin draft/prerelease. [Recibo de seis assets](releases/v1.0.0.json). Los gzip proceden del CI aprobado de ese commit; promoción modifica solo `release` de los JSON y vuelve a validar hashes y bindings. El bundle VM separado tiene SHA `f69991224a04364c8929107ca3895c8b8228ea3f141379d9adbb2f55c29a24b8`; no se adjunta como séptimo asset. Instalación y aceptación OCI pendientes del coordinador.
+## Preparación de una release
 
-Parche vigente: [`v1.0.1`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.1), SHA `6605611c02ea79f1732044ea8305b8b6da322ed8`, ID `436036581`, privada e inmutable. [Recibo completo](releases/v1.0.1.json). Corrige el primer arranque sin dominio/certificado ni bundle manuales. VM local TLS y revisión del host documentadas en [operación](operations.md). v1.0.0 se conserva; no se alteraron sus assets.
+El [workflow CI](../.github/workflows/ci.yml) ejecuta comprobaciones y construye/empaqueta las tres imágenes. `scripts/release/package_candidate.py` recibe una imagen ya construida; no construye, descarga ni publica imágenes. Verifica ID/plataforma, fija tag canónico por commit y produce gzip/manifiesto con hashes.
 
-Versión vigente del selector: [`v1.0.2`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.2), SHA `730866e381d7573b9e40ab1badd1b152870de816`, ID `436043929`, privada e inmutable. [Recibo completo](releases/v1.0.2.json). Campo `identity_domain_id` select requerido con `oci_identity_domains` y patrón OCID preservado; no se pide escribir el OCID. Listado real/Browser a cargo del consumidor CTN. Se conservan v1.0.0/v1.0.1, fichas y PNG.
+Los artifacts CI con `release=candidate` no son instalables. La preparación estable debe conservar los gzip y sus IDs/tags/commit, fijar la release estable en los JSON y volver a validar su semántica y hashes. Antes de publicar el borrador, comprobar los seis assets remotos y sus tamaños/digests. Publicar con inmutabilidad habilitada y verificar tag→commit. Una corrección requiere otra versión; no sobrescribir assets ni tags inmutables.
+
+El repositorio público no permite publicar perfiles OCI, archivos de entorno, claves, estado Terraform o datos operativos. Revisar historial y contenido de imágenes, incluidas capas anteriores y metadata de build, antes de exponer material nuevo.
+
+## Instalación y actualización
+
+Deploy Studio entrega los seis assets verificados al hook; la VM usa imágenes locales por ID, sin pulls de registro ni tokens GitHub. La revisión del host combina bundle y plantilla de arranque. Un Update de imágenes requiere la misma revisión; migrar un bootstrap distinto exige recuperación autorizada del host. [Operación](operations.md) describe Resume, recibos y rollback.
+
+Una release publicada o un CI aprobado no acreditan instalación OCI, permisos efectivos, confianza del certificado en Browser ni conversación del agente. El post-apply mantiene esas comprobaciones diferenciadas.
+
+## Evidencia y pruebas
+
+- Recibos: [v1.0.2](releases/v1.0.2.json), [v1.0.1](releases/v1.0.1.json), [v1.0.0](releases/v1.0.0.json).
+- [Verificación de imágenes y CAS](../tests/test_image_assets.py), [carga VM](../tests/test_image_assets_vm.py) y [empaquetado](../tests/test_release_candidate.py).
+- [Rollback reproducible](../docker/tests/bootstrap-rollback.sh) y [alcance de validación](../apps/backend/tests/validation-scope.json).
+- El historial de extracción y los informes de ejecución se mantienen en `docs/migration-assessment.md`, `docs/extraction-provenance.json` y `docs/tasks/`; no son instrucciones de instalación.
+
+Las releases existentes permanecen inmutables. Sus notas conservan el contexto de publicación original; la visibilidad actual del repositorio no altera sus bytes ni hashes.

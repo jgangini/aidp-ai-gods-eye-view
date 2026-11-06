@@ -1,5 +1,7 @@
 # God’s Eye View: diagnóstico de separación
 
+Documento historico de evaluacion de la fuente. Sus estados y propuestas corresponden a esa revision; no describen la visibilidad ni el comportamiento actuales. Para uso vigente, consultar [README](../README.md), [instalacion](contracts.md) y [operacion](operations.md).
+
 Fecha: 2026-11-05. Diagnóstico original de la primera fase, conservado como evidencia del corte. La implementación posterior autorizada y sus checks se registran en `docs/tasks/current.md`; las afirmaciones de ausencia de cambios de las secciones de diagnóstico corresponden a aquella fase. No se ejecutaron operaciones cloud ni una release final.
 
 ## Alcance y evidencia

@@ -1,38 +1,72 @@
-# Contratos del candidato
+# Instalación e identidad
 
-El ID del producto es `gods_eye_view`; el proyecto Deploy Studio es `aidp-ai-gods-eye-view`. Las identidades persistentes del dataset y Workspace se conservan. El inventario inicial describe la fuente; los archivos actuales y sus pruebas describen este candidato.
+God’s Eye View se instala mediante Deploy Studio. Su [manifiesto](../terraform/deploy-studio.json) define el proyecto `aidp-ai-gods-eye-view`; el identificador de producto es `gods_eye_view`. El repositorio y las releases de aplicación son públicos. Los datos, claves y objetos operativos de cada instalación permanecen en su entorno OCI.
 
-## Interfaz e identidad
+## Requisitos
 
-La única interfaz está en `/gods-eye-view/`; abre los controles integrados `/controls/` para administradores. `/api/gods-eye-view/session` revalida cuenta y membresía; `/api/admin/session` exige además el `admin_user_ocid` seleccionado y permisos AIDP efectivos, incluidos grupos y roles heredados. La API rechaza headers de identidad externos como autorización y comprueba las mutaciones en servidor. OIDC utiliza callback `/api/auth/oci/callback`, PKCE, firma, issuer, audience, nonce y vigencia.
+- Cuenta OCI y operador autorizado para los recursos del plan, Identity Domains, AIDP, Object Storage y Compute Instance Run Command.
+- Región suscrita compatible con AIDP y GenAI Chat, con capacidad para una VM Standard E5 Flex de 2 OCPU y 16 GiB.
+- Identity Domain ACTIVE y administrador ACTIVE de ese dominio. En una plataforma existente, operador y administrador deben superar la comprobación de permisos AIDP efectivos.
+- Cinco buckets distintos para Landing, Bronze, Silver, Gold y artifacts: crearlos en este despliegue o disponer de ellos con permisos adecuados.
+- Modelo OCI seleccionado mediante `agent_model_id` y salida de la VM hacia repositorios de paquetes, Identity Domains, OCI y los proveedores configurados.
 
-El gateway elimina headers aportados por el cliente. Node y el bridge carecen de puertos públicos. La API no expone instalación HTTP ni registro/login local. Las transacciones OIDC y límites son por proceso: una sola instancia/worker hasta implementar almacenamiento compartido.
+La selección de imagen/shape no reserva capacidad. El lanzamiento efectivo y la propagación IAM deben comprobarse en OCI.
 
-## Instalación desde Deploy Studio
+## Instalar una plataforma nueva
 
-`terraform/deploy-studio.json` usa schema 1 y el selector común `oci_aidp_administrators`. Se validó con el modelo Pydantic y extractor de archivo reales de CloudTechNext, incluidos entrypoints e include_paths. Esa validación local no demuestra instalación cloud.
+1. En Deploy Studio, seleccionar este proyecto, una release estable `vMAJOR.MINOR.PATCH` como fuente y el mismo valor en `release_tag`.
+2. Elegir región y compartimento. Seleccionar Identity Domain y administrador desde sus listas; el valor persistido es su OCID.
+3. Elegir `aidp_mode=new`, un prefijo de recursos estable, el modelo y las cinco selecciones de buckets.
+4. Revisar el plan y ejecutar el despliegue. El operador conserva su propia identidad firmante. Post-apply concede/verifica `AI_DATA_PLATFORM_ADMIN` para el administrador seleccionado y añade su acceso al grupo lector del visor.
+5. Revisar los outputs, la salud y el estado nativo. Establecer confianza en el certificado publicado por Deploy Studio antes de iniciar OIDC en el visor.
 
-El usuario selecciona `identity_domain_id` mediante `oci_identity_domains` (valor OCID, etiqueta nombre/compartimento; contrato CTN de dominios ACTIVE en región home), `admin_user_ocid`, `aidp_mode=new|existing` y, para existente, `existing_ai_data_platform_ocid` y `existing_workspace_key`. Los hooks vuelven a comprobar identidad/dominio/roles en instalación y Resume. La plataforma nueva concede explícitamente `AI_DATA_PLATFORM_ADMIN` al seleccionado y verifica el resultado. El operador conserva su propia identidad firmante; la selección no lo suplanta ni crea otro provisioner.
+La creación de compartimento y la elección new/existing de AIDP son decisiones distintas.
 
-Las cuatro selecciones medallion y artifacts son distintas. Un catálogo externo requiere `existing_catalog_key` exacto; encontrar un nombre coincidente no autoriza adoptarlo. Los recursos externos no entran al state como recursos a destruir. Los recibos operativos usan CAS, identidad exacta y exclusión de runners.
+## Usar AIDP existente
 
-Preflight selecciona automáticamente una imagen pública Oracle Linux 9 compatible con VM.Standard.E5.Flex y un availability domain compatible, con paginación OCI; conserva los IDs ya fijados en Resume. La capacidad efectiva de lanzamiento sigue pendiente de OCI. Terraform deriva `public_origin` de la IP pública asignada a la VM y registra ese mismo origen en el callback OIDC; no requiere dominio ni certificado del usuario. La VM necesita salida a repositorios de paquetes y a OCI. La identidad de instancia solo lee el bundle fijado y consume el objeto cifrado de su despliegue. La política de servicio AIDP nueva se declara separadamente de las referencias externas. La propagación real de IAM queda por aceptar en OCI.
+Elegir `aidp_mode=existing` y proporcionar `existing_ai_data_platform_ocid` y `existing_workspace_key` exactos. El hook comprueba plataforma/workspace activos, permisos del operador y roles efectivos del administrador. Terraform la consulta como data source; no la convierte en un recurso administrado por esta instalación.
 
-## Artefactos privados y secretos
+Para reutilizar un catálogo, indicar `existing_catalog_key` exacto. Un nombre coincidente no permite adoptarlo. Sin esa clave se sigue la creación administrada y se registra el recurso obtenido; un conflicto exige reconciliación. Al reutilizar buckets, usar `create_buckets=false`.
 
-El bootstrap de VM es un ZIP determinista de cuatro archivos públicos de aplicación: Compose, script de arranque, receptor cifrado y cargador de imágenes verificadas. Preflight deriva su SHA-256 y objeto `releases/<commit>/vm-bootstrap-<hash>.zip` de los bytes del código fijado y los devuelve como runtime inputs; no se piden al usuario. Post-apply verifica los bytes y los publica condicionalmente en el bucket artifacts. La VM los lee mediante instance principal y verifica el hash: no necesita PAT para descargar fuente GitHub ni clona repositorios privados al arrancar.
+Para compartir una plataforma con [AIDP AI Data Governance](https://github.com/jgangini/aidp-ai-data-gobernance) u otros módulos, conservar sus OCID, workspace, región y selecciones de almacenamiento verificadas. No crear otra plataforma como sustitución de una instalación existente.
 
-El manifiesto declara seis `release_assets`: preflight descarga tres manifiestos JSON y recibe metadata de los tres archivos de imagen; post-apply recibe los seis archivos verificados. El control plane es dueño de la autorización GitHub. Entrega `context.release_assets` con repositorio, ref, commit, release ID y metadata/rutas locales; no pasa token, URL ni headers a los hooks. El consumidor del producto revalida los bindings, manifiestos y bytes locales antes de publicar objetos OCI mediante CAS.
+## Parámetros del formulario
 
-El [contrato exacto de handoff](private-artifact-handoff.md) distingue la adaptación del consumidor y la integración CTN pendiente de aceptación. Los hooks rechazan un handoff ausente o inválido antes de mutar recursos; no suponen `GH_TOKEN`/`GITHUB_TOKEN` ni credenciales GitHub en inputs secretos. El descargador HTTP aislado se conserva con sus pruebas, pero no es la ruta activa. Se mantiene privado el repositorio.
+| Parámetro | Uso |
+| --- | --- |
+| `identity_domain_id` | Selector `oci_identity_domains`: valor OCID; contrato CTN de dominios ACTIVE en región home, etiqueta con nombre/compartimento. |
+| `admin_user_ocid` | Selector `oci_aidp_administrators`; revalidación en el hook, incluidos USER, GROUP y ROLE heredados. |
+| `aidp_mode` | `new` o `existing`. |
+| `existing_ai_data_platform_ocid`, `existing_workspace_key` | Obligatorios para AIDP existente. |
+| `existing_catalog_key` | Clave exacta del catálogo externo, si se reutiliza. |
+| `name` | Prefijo estable de recursos. |
+| `create_buckets` | Crear las cinco selecciones o usar buckets existentes. |
+| `landing_bucket_name`, `bronze_bucket_name`, `silver_bucket_name`, `gold_bucket_name`, `artifacts_bucket_name` | Cinco nombres distintos. |
+| `agent_model_id` | Modelo OCI para el agente. |
+| `release_tag` | Misma release estable e inmutable que la fuente seleccionada. |
 
-El consumidor VM ya lee los tres objetos exactos mediante instance principal, verifica SHA-256 antes de `docker load` y comprueba el ID de contenido y `linux/amd64` después. Compose utiliza IDs locales `sha256:...` y `pull_policy: never`; no necesita credenciales GitHub ni registro. Su IAM permite solo esos objetos de release y su objeto de bootstrap. El rollback conserva esos IDs inmutables.
+El runner fija `source_commit_sha`. Preflight obtiene endpoint del dominio, región home, identidad/fingerprint del operador, imagen Oracle Linux 9 y AD compatibles, y objeto/hash del bundle. Conserva la imagen y el AD ya fijados al reanudar. Esos valores no se descubren ni escriben manualmente en el formulario.
 
-CI prepara archivos/manifiestos del candidato como artifacts privados. La preparación de una release estable privada inmutable está autorizada para la prueba nativa coordinada, y requiere seis assets exactos vinculados al código validado. Los artifacts `candidate` se rechazan como release instalable. Las pruebas locales del consumidor no sustituyen la aceptación del handoff real y del runtime OCI.
-Perfil y clave OCI se entregan por el canal cifrado. El payload contiene exactamente `config`, `key`, `runtime_env` e `image_assets`; rechaza campos TLS externos. La VM genera y conserva una clave TLS RSA 3072 y un certificado autofirmado anual con SAN de su IP. Solo el PEM público canónico y su huella SHA-256 DER regresan por OCI Run Command autenticado. El hook verifica hostname y salud con un almacén TLS que contiene exclusivamente esa hoja, sin CAs del sistema ni proxy ambiental. El navegador requiere confianza explícita en esa hoja/IP antes de OIDC; el certificado no procede de una CA pública. La VM verifica identidad y fingerprint, instala archivos atómicos y consume la clave temporal; elimina el objeto mediante ETag y verifica su ausencia. Nunca se copia `.oci` del entorno de desarrollo. Los logs de callback OIDC no incluyen códigos en query strings.
+Terraform deriva `public_origin` de la IP pública asignada y registra ese mismo origen en el callback OIDC. No exige dominio DNS, certificado, clave TLS ni coordenadas del bundle aportadas por el usuario.
 
-## Recursos AIDP
+## Acceso al visor
 
-`aidp/manifest.json` declara los tres programas legibles, sus fuentes de ensamblado y hashes, además de recursos que define el bootstrap. La publicación conserva `/Workspace/medallion/gods_eye_view/`, workflows social/sensor y cuatro computes separados. `publication_version` une consultas Gold, evidencia y acciones del mapa. SQLite es proyección reconstruible; Object Storage y Gold conservan los datos durables.
+La entrada es `/gods-eye-view/`; los administradores abren `/controls/` dentro del visor. Solo el gateway publica TLS 443. API, bridge y Node permanecen en la red interna.
 
-Instalación, tarea activa, publicación comprobada y conversación del agente son gates separados. Esta tarea no ejecutó inferencia ni escrituras cloud. Las pruebas de fábrica y fixtures no acreditan el runtime AIDP efectivo ni permisos de una instalación viva.
+OIDC utiliza `/api/auth/oci/callback`, PKCE, firma, issuer, audience, nonce y vigencia. El gateway elimina headers de identidad externos. `/api/gods-eye-view/session` revalida cuenta y membresía; `/api/admin/session` exige además el administrador seleccionado y permisos AIDP efectivos. La selección administrativa no suplanta al operador OCI. No hay registro/login local ni instalación HTTP.
+
+La API se despliega con un solo worker. Las transacciones OIDC y sus límites son por proceso; usar varios workers o instancias requiere almacenamiento compartido y validación del escalado.
+
+## Credenciales, TLS y persistencia
+
+El control plane entrega [assets verificados](private-artifact-handoff.md). El hook vuelve a comprobar repositorio/ref/SHA, manifiestos y bytes; la VM carga imágenes por ID local con `pull_policy: never`. Ningún token GitHub/registro llega al hook o a la VM.
+
+Perfil y clave OCI se entregan en un sobre RSA/AES-GCM ligado a deployment, operador y fingerprint. El receptor comprueba la clave/perfil, escribe archivos atómicos y consume la clave temporal. El objeto de entrega se elimina con ETag y se verifica su ausencia. Nunca incluir `.oci`, claves o estado en Git o imágenes.
+
+La VM genera su clave TLS RSA 3072 y una hoja autofirmada anual con SAN de su IP. OCI Run Command devuelve solo certificado público canónico y huella SHA-256 DER. El hook verifica salud confiando exclusivamente en esa hoja y comprobando IP/vigencia, sin proxy ambiental. **El navegador requiere confianza explícita en ese certificado/IP; no es una CA pública.** Véanse [operación y recuperación](operations.md).
+
+Object Storage, Gold, checkpoints y recibos conservan el estado durable. SQLite y cachés son proyecciones reconstruibles. `aidp/manifest.json` declara tres programas, sus fuentes/hashes y recursos nativos; publicación y consultas conservan la relación `publication_version`.
+
+## Verificación de una instalación
+
+Un post-apply satisfactorio comprueba task/publicación, recibo de imágenes y salud TLS, incluida respuesta 401 para sesión anónima. Devuelve `installed_conversation_pending`: no acredita una conversación del agente. Permisos negativos, confianza Browser y comportamiento nativo necesitan aceptación en el entorno real. Las pruebas locales y los mocks no sustituyen esa aceptación.

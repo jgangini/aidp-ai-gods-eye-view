@@ -1,50 +1,56 @@
-# Handoff privado de assets
+# Entrega de assets verificados
 
-El control plane CTN conserva la autorización GitHub y entrega archivos verificados al hook. El producto consume metadata y rutas locales; no recibe token, URL ni headers GitHub. La integración CTN se acepta mediante la prueba coordinada; los tests locales no acreditan un despliegue OCI.
+El control plane de Deploy Studio resuelve el repositorio público y una release estable inmutable, verifica tag/commit y metadata GitHub, y entrega archivos locales al hook. Si utiliza autorización GitHub, la conserva en el control plane. El producto no recibe tokens, URLs bearer ni headers GitHub.
 
-## Manifiesto del producto
+## Archivos requeridos
 
-Ambas fases declaran `release_assets: [{name,max_bytes,download}]` en `terraform/deploy-studio.json`. Preflight descarga tres JSON y solo consulta metadata de los tres gzip. Post-apply descarga los seis. Cada JSON permite 65.536 bytes; límites gzip API 512 MiB, visor 1 GiB, gateway 128 MiB. No cuentan contra el límite de extracción de fuentes de 10 MiB.
+El [manifiesto](../terraform/deploy-studio.json) declara seis `release_assets` por fase. Preflight recibe tres JSON descargados y metadata de los tres gzip; post-apply recibe los seis archivos.
 
-| Componente | JSON | Gzip |
-| --- | --- | --- |
-| api | `gods-eye-view-api-release.json` | `gods-eye-view-api-image-amd64.tar.gz` |
-| viewer | `gods-eye-view-release.json` | `gods-eye-view-image-amd64.tar.gz` |
-| gateway | `gods-eye-view-gateway-release.json` | `gods-eye-view-gateway-image-amd64.tar.gz` |
+| Componente | Manifiesto | Imagen gzip | Máximo gzip |
+| --- | --- | --- | --- |
+| API | `gods-eye-view-api-release.json` | `gods-eye-view-api-image-amd64.tar.gz` | 512 MiB |
+| Visor | `gods-eye-view-release.json` | `gods-eye-view-image-amd64.tar.gz` | 1 GiB |
+| Gateway | `gods-eye-view-gateway-release.json` | `gods-eye-view-gateway-image-amd64.tar.gz` | 128 MiB |
 
-## Contexto confiable del runner
+Cada JSON permite 65.536 bytes. Los assets se almacenan fuera de la extracción de fuentes; no consumen su límite de 10 MiB. La fuente tiene límites separados de 100 MiB de archivo, 250 archivos y 10 MiB extraídos en CTN.
 
-Contrato indicado por el coordinador; requiere la versión CTN que lo implementa:
+## Contexto del runner
+
+`context.release_assets` es un campo confiable del runner, no un input del formulario:
 
 ```json
 {
-  "release_assets": {
-    "schema_version": 1,
-    "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
-    "ref": "v1.0.0",
-    "commit_sha": "<commit de 40 hex>",
-    "release_id": 123,
-    "assets": {
-      "gods-eye-view-api-release.json": {
-        "asset_id": 456,
-        "size": 564,
-        "sha256": "<64 hex>",
-        "path": "<ruta local absoluta readonly>"
-      }
+  "schema_version": 1,
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "ref": "v1.0.2",
+  "commit_sha": "<40 hex>",
+  "release_id": 123,
+  "assets": {
+    "gods-eye-view-api-release.json": {
+      "asset_id": 456,
+      "size": 561,
+      "sha256": "<64 hex>",
+      "path": "<ruta local absoluta readonly>"
     }
   }
 }
 ```
 
-El ejemplo abrevia los seis assets; IDs/tamaños/rutas son ilustrativos. El runner verifica repositorio/ref/SHA fijados, release estable inmutable y metadata GitHub exacta. El campo no procede del formulario. `path` existe solo para archivos descargados y verificados, en el área aislada del job. El consumidor requiere los seis nombres exactos, IDs positivos distintos, límites/tamaños/hashes válidos y bindings coincidentes con `context.source.repository/commit_sha` y `inputs.release_tag/source_commit_sha`.
+El ejemplo abrevia los seis nombres. IDs y tamaños son ilustrativos. `path` está presente solo cuando el control plane descargó/verificó ese archivo. El consumidor exige repositorio/ref/commit iguales a `context.source` y a `inputs.release_tag/source_commit_sha`, schema 1, IDs positivos distintos, seis nombres exactos, límites y hashes válidos.
 
-`inspect_handoff(context)` revalida los JSON y sus hashes, la identidad semántica de los tres manifests y metadata de gzip. `inspect_handoff(context, require_archives=True)` exige además archivos gzip locales y comprueba todos sus bytes antes de iniciar la instalación. `stage_handoff(context, storage)` repite la validación antes de publicar objetos CAS: no sobrescribe conflictos y comprueba todos los componentes antes del primer upload. Se rechazan directorios, rutas relativas y symlinks. Ausencia o invalidez del contexto falla antes del journal y mutaciones nativas.
+Cada JSON schema 1/updater_protocol 1 vincula repositorio, release, commit, nombre/hash del gzip, plataforma `linux/amd64`, tag canónico `<componente>:<commit>` e ID `sha256:...`.
 
-Cada manifiesto schema 1/updater_protocol 1 vincula `repository`, `release`, `commit_sha`, `image.asset_name`, `image.sha256`, `image.platform=linux/amd64`, `image.image_tag` y `image.image_id`. El downloader HTTP anterior permanece aislado/probado, pero no es llamado por los hooks activos.
+## Revalidación y staging
 
-## Entrega OCI y VM
+- `inspect_handoff(context)` verifica JSON locales, semántica de manifiestos y metadata de imágenes. También verifica cualquier gzip cuyo path se entregue.
+- `inspect_handoff(context, require_archives=True)` exige y verifica todos los gzip antes de iniciar instalación.
+- `stage_handoff(context, storage)` verifica snapshots de los seis archivos antes del primer upload; publica tres gzip mediante CAS y rechaza objetos existentes incompatibles.
 
-El resultado interno usa exactamente tres descriptores:
+Se rechazan rutas relativas, directorios y symlinks/reparse points, incluidos ancestros. Las cargas usan snapshots verificados para que cambiar un path original no altere los bytes publicados. Un handoff ausente o inválido no permite crear el journal ni recursos nativos.
+
+## Contrato de la VM
+
+El staging devuelve tres descriptores, con namespace/bucket obtenidos de outputs Terraform:
 
 ```json
 {
@@ -56,23 +62,10 @@ El resultado interno usa exactamente tres descriptores:
 }
 ```
 
-Viewer/gateway usan sus prefijos de la tabla. Namespace y bucket proceden de outputs Terraform verificados. La VM descarga mediante instance principal restringido, verifica SHA antes de `docker load`, comprueba ID/plataforma y usa imágenes locales con `pull_policy: never`. Sin token GitHub/registry ni URL bearer.
+Visor y gateway usan sus prefijos de la tabla. La VM lee objetos mediante instance principal restringido, verifica SHA antes de `docker load` e ID/plataforma después. Compose usa IDs locales y `pull_policy: never`. El receptor systemd y los recibos activos controlan la activación; véase [operación](operations.md).
 
-`vm-bootstrap.zip` es un artifact separado de cuatro archivos del mismo código; no forma parte de los seis assets de imagen. Preflight deriva objeto y hash del código fijado y los entrega como `vm_bundle_object`/`vm_bundle_sha256`, sin campos manuales. Post-apply valida/publica el bundle en el bucket operativo seleccionado. Una release estable inmutable tiene exactamente seis assets; los artifacts CI `release=candidate` se rechazan como release instalable.
+`vm-bootstrap.zip` se construye desde cuatro archivos explícitos del código fijado. Preflight calcula su objeto y SHA; post-apply valida/publica esos bytes en el bucket operativo. Es independiente de las imágenes y no es un séptimo asset de release.
 
-## Parámetros de la prueba compartida
+## Alcance
 
-- Orden Governance→Market→GodEye sobre un AIDP. Para GodEye: `aidp_mode=existing`, `existing_ai_data_platform_ocid` y `existing_workspace_key` iguales a los outputs exactos de la primera instalación. No crear otra plataforma. Aún no se conocen esos valores reales en este candidato.
-- `identity_domain_id`: selección `oci_identity_domains` con valor OCID, dominio ACTIVE; `admin_user_ocid`: usuario ACTIVE de ese dominio, seleccionado por `oci_aidp_administrators` y revalidado con roles efectivos USER/GROUP/ROLE. Operador firmante separado del administrador elegido.
-- `existing_catalog_key`: clave exacta al reutilizar `oci_medallion`; ausencia permite creación administrada. Resume rechaza cambiar catálogo, workspace, plataforma o administrador.
-- Cinco buckets distintos: `landing_bucket_name`, `bronze_bucket_name`, `silver_bucket_name`, `gold_bucket_name`, `artifacts_bucket_name`. `create_buckets=false` al reutilizarlos. Mantener región y namespace correctos.
-- `agent_model_id` sigue siendo una selección del despliegue. Preflight resuelve `availability_domain` e `image_ocid` Oracle Linux 9 y calcula objeto/SHA del bundle. Terraform deriva `public_origin` de la IP asignada; la VM genera TLS local. No hay campos manuales de dominio, certificado, clave TLS ni bundle. `source_commit_sha` deriva de la fuente confiable del runner. `release_tag` debe identificar la release estable del código validado.
-
-El coordinador posee Browser/Docker compartido, colas, exclusión mutua y mutaciones OCI. Mantener privado. Preparar/publicar assets no demuestra APPLY, bootstrap, task/publicación ni conversación real; no se ejecutan actores pagados ni una evaluación ampliada de respuestas.
-
-
-Release disponible: `v1.0.0`, SHA `219014036e3fbba1d808f5f10822aa786bf607f6`, privada e inmutable, ID `436010655`. [Recibo con los seis assets reales y bundle separado](releases/v1.0.0.json). El catálogo CTN aún debe habilitar este proyecto; no se alteró desde esta tarea.
-
-Parche vigente: [`v1.0.1`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.1), SHA `6605611c02ea79f1732044ea8305b8b6da322ed8`, ID `436036581`, privada e inmutable. [Recibo completo](releases/v1.0.1.json). Corrige el primer arranque sin dominio/certificado ni bundle manuales. VM local TLS y revisión del host documentadas en [operación](operations.md). v1.0.0 se conserva; no se alteraron sus assets.
-
-Versión vigente del selector: [`v1.0.2`](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.2), SHA `730866e381d7573b9e40ab1badd1b152870de816`, ID `436043929`, privada e inmutable. [Recibo completo](releases/v1.0.2.json). Campo `identity_domain_id` select requerido con `oci_identity_domains` y patrón OCID preservado; no se pide escribir el OCID. Listado real/Browser a cargo del consumidor CTN. Se conservan v1.0.0/v1.0.1, fichas y PNG.
+La publicidad del código no vuelve públicos buckets, controles, claves ni datos OCI. La integración exige una versión de CTN que implemente este contrato. Aceptar el schema o verificar archivos localmente no demuestra instalación, IAM, capacidad o publicación nativa en un entorno OCI. Los [recibos de releases](release-contract.md) conservan evidencias separadas del procedimiento operativo.
