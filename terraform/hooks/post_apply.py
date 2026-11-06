@@ -13,7 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
 from native_api import AidpApi, ApiRequestError, ensure_workspace_folder, build_signer, load_oci_config
-from preflight import effective_admin, probe, source_context
+from preflight import effective_admin, probe, source_context, installation_identity, verify_catalog_selection
 from gods_eye_view_bootstrap import bootstrap_gods_eye_view, operation
 from app.config import Settings
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
@@ -82,14 +82,12 @@ def catalog(api, journal, external_key=""):
     if key and external_key and key != external_key:
         raise ValueError("Selected catalog differs from this installation's exact receipt")
     if not key and external_key:
-        value = api.request("GET", "/catalogs/" + quote(external_key, safe="")).body
-        if value.get("key") != external_key or value.get("displayName") != "oci_medallion" or value.get("catalogType") != "INTERNAL":
-            raise ValueError("Selected external catalog differs from its exact identity")
+        value = verify_catalog_selection(api, external_key)
         journal.record("catalog", external_key)
         journal.save(catalog_ownership="external")
         key = external_key
     if key:
-        value = api.request("GET", "/catalogs/" + quote(key, safe="")).body
+        value = verify_catalog_selection(api, key)
     else:
         if any(item.get("displayName") == "oci_medallion" for item in api.list_all("/catalogs")):
             raise ValueError("Catalog exists without this installation's exact receipt; refusing adoption")
@@ -180,9 +178,7 @@ def install(context, config, signer, storage, *, secrets=None, api_factory=AidpA
     api = api_factory(context["region"], outputs["ai_data_platform_id"], signer, context["deployment_id"])
     store = ObjectControlStore(storage, outputs["objectstorage_namespace"], outputs["artifacts_bucket_name"],
         prefix=".control/gods_eye_view/install/")
-    identity = {"product": "gods_eye_view", "deployment_id": context["deployment_id"],
-        "platform_id": outputs["ai_data_platform_id"], "admin_user_ocid": inputs["admin_user_ocid"],
-        "identity_domain_id": inputs["identity_domain_id"], "operator_user_ocid": config["user"]}
+    identity = installation_identity(context, config, outputs["ai_data_platform_id"])
     journal = InstallationJournal(store, identity)
     api.installation_journal = journal
     try:
@@ -208,7 +204,7 @@ def install(context, config, signer, storage, *, secrets=None, api_factory=AidpA
         verified_context = {**context, "inputs": {**inputs, "aidp_mode": "existing",
             "existing_ai_data_platform_ocid": outputs["ai_data_platform_id"],
             "existing_workspace_key": resolve_workspace(api, context, outputs)}}
-        probe(verified_context, config)
+        probe(verified_context, config, known_catalog_key=journal.state["resources"].get("catalog", ""))
         workspace = verified_context["inputs"]["existing_workspace_key"]
         journal.record("workspace", workspace)
         managed_catalog = catalog(api, journal, inputs.get("existing_catalog_key", ""))

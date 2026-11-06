@@ -26,7 +26,7 @@ La creación de compartimento y la elección new/existing de AIDP son decisiones
 
 Elegir `aidp_mode=existing` y proporcionar `existing_ai_data_platform_ocid` y `existing_workspace_key` exactos. El hook comprueba plataforma/workspace activos, permisos del operador y roles efectivos del administrador. Terraform la consulta como data source; no la convierte en un recurso administrado por esta instalación.
 
-Para reutilizar un catálogo, indicar `existing_catalog_key` exacto. Un nombre coincidente no permite adoptarlo. Sin esa clave se sigue la creación administrada y se registra el recurso obtenido; un conflicto exige reconciliación. Al reutilizar buckets, usar `create_buckets=false`.
+Para reutilizar un catálogo externo, indicar `existing_catalog_key` exacto. Preflight verifica que corresponda a `oci_medallion` de tipo `INTERNAL`; un nombre coincidente no permite adoptarlo. Si ya existe ese nombre sin clave exacta ni recibo propio verificable, la validación bloquea antes de APPLY. Resume puede recuperar la clave del recibo de esta misma instalación, tras comprobar deployment, plataforma, administrador, dominio y operador; esa consulta solo lee el recibo. Si no existe el catálogo, la instalación puede crearlo y registrar su identidad. Al reutilizar buckets, usar `create_buckets=false`.
 
 Para compartir una plataforma con [AIDP AI Data Governance](https://github.com/jgangini/aidp-ai-data-gobernance) u otros módulos, conservar sus OCID, workspace, región y selecciones de almacenamiento verificadas. No crear otra plataforma como sustitución de una instalación existente.
 

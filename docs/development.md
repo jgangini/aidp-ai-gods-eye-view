@@ -27,6 +27,10 @@ Antes de un cambio no trivial de código, configuración o estructura, ejecutar 
 
 `scripts/check_product.py` valida la selección explícita de suites Python, los tests de `tests/` y `terraform/tests/`, el renderizado de los programas AIDP y los checks Terraform de formato, validación y mocks. Su opción `--backend-only` omite los comandos Terraform y se usa en CI, donde Terraform tiene un job separado. Los tests Python de contratos Terraform siguen incluidos en esa selección.
 
+Los hooks respetan ambos contextos de CloudTechNext: preflight recibe `compartment` como string y `compartment_mode=new|existing`; post-apply recibe un objeto con `id` y `name`, sin mode. Antes de crear un compartimento, la consulta de compatibilidad Compute utiliza la tenancy; con uno existente utiliza su OCID. Post-apply exige que el ID coincida con `terraform_outputs.compartment_ocid` y rechaza contextos malformados.
+
+El runner filtra Terraform state mediante `manifest.outputs` antes del hook. El manifiesto declara los 15 outputs Terraform no sensibles consumidos por la instalación y los seis derivados del hook; no presupone acceso al resto del state. `tests/test_runner_outputs.py` prueba esa proyección, ambos modos de workspace y la configuración nativa. Cuando existe un checkout hermano de CloudTechNext o `CLOUDTECHNEXT_SOURCE_ROOT`, también ejecuta su parser y proyección reales sin inicializar servicios; ese check externo es opcional en CI.
+
 Los controles React y el visor nativo tienen sus propios runners existentes. Ejecutar los checks afectados por el cambio y conservar los resultados de la revisión final:
 
 | Superficie | Comandos existentes |

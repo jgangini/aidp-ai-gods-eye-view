@@ -10,7 +10,7 @@ from oci.response import Response
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "terraform/hooks"))
 sys.path.insert(0, str(ROOT / "scripts/deployment"))
-from first_install import vm_inputs
+from first_install import compartment_scope, vm_inputs
 from vm_delivery import certificate_binding, verify_host_state, HostBootstrapMismatch
 from build_vm_bundle import build
 
@@ -33,11 +33,59 @@ class Compute:
 
 
 def context():
-    return {"inputs": {"source_commit_sha": "a" * 40}, "compartment": {"id": "ocid1.compartment.oc1..selected"}}
+    return {"inputs": {"source_commit_sha": "a" * 40},
+        "compartment": {"id": "ocid1.compartment.oc1..selected", "name": "selected"},
+        "terraform_outputs": {"compartment_ocid": "ocid1.compartment.oc1..selected"}}
 
 
 def identity(*names):
     return Item(list_availability_domains=lambda tenancy, **_kw: Response(200, {}, [Item(name=n) for n in names], None))
+
+
+@pytest.mark.parametrize("mode,selection,expected", [
+    ("new", "aidp-gods-eye-view", "ocid1.tenancy.oc1..operator"),
+    ("existing", "ocid1.compartment.oc1..selected", "ocid1.compartment.oc1..selected"),
+])
+def test_vm_discovery_uses_the_actual_string_preflight_contract(mode, selection, expected):
+    calls = []
+    compute = Compute()
+    original_images, original_shapes = compute.list_images, compute.list_shapes
+    def images(scope, **kw):
+        calls.append(scope)
+        return original_images("ocid1.compartment.oc1..selected", **kw)
+    def shapes(scope, **kw):
+        calls.append(scope)
+        return original_shapes("ocid1.compartment.oc1..selected", **kw)
+    compute.list_images, compute.list_shapes = images, shapes
+    c = {"schema_version": 1, "deployment_id": "deployment-1", "project_id": "aidp-ai-gods-eye-view",
+        "source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "ref": "v1.0.3", "commit_sha": "a" * 40},
+        "region": "us-chicago-1", "compartment": selection, "compartment_mode": mode,
+        "inputs": {"source_commit_sha": "a" * 40}}
+    result = vm_inputs(c, {"tenancy": "ocid1.tenancy.oc1..operator"}, compute, identity("AD-1"))
+    assert result["image_ocid"] == compute.image.id
+    assert calls == [expected, expected]
+
+
+def test_resolved_postapply_compartment_matches_terraform_outputs():
+    c = {"compartment": {"id": "ocid1.compartment.oc1..selected", "name": "selected"},
+        "terraform_outputs": {"compartment_ocid": "ocid1.compartment.oc1..selected"}}
+    assert compartment_scope(c, {"tenancy": "ocid1.tenancy.oc1..operator"}) == c["compartment"]["id"]
+    c["terraform_outputs"]["compartment_ocid"] = "ocid1.compartment.oc1..other"
+    with pytest.raises(ValueError, match="differ"):
+        compartment_scope(c, {})
+
+
+@pytest.mark.parametrize("context", [
+    {"compartment": "missing-mode"},
+    {"compartment": "display-name", "compartment_mode": "existing"},
+    {"compartment": "", "compartment_mode": "existing"},
+    {"compartment": {"name": "missing-id"}},
+    {"compartment": None, "compartment_mode": "new"},
+    {"compartment": "name", "compartment_mode": "unknown"},
+])
+def test_invalid_runner_compartment_never_falls_back_to_tenancy(context):
+    with pytest.raises(ValueError):
+        vm_inputs(context, {"tenancy": "ocid1.tenancy.oc1..operator"}, object(), object())
 
 
 def test_first_install_resolves_native_image_domain_and_bundle_without_user_artifact_inputs():

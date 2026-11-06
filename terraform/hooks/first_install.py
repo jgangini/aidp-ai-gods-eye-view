@@ -1,13 +1,32 @@
 """Resolve first-boot inputs from the authorized OCI context and pinned source."""
 import hashlib
 from pathlib import Path
+import re
 import sys
 from oci.pagination import list_call_get_all_results
 
 
+def compartment_scope(context, config):
+    selection, mode = context.get("compartment"), context.get("compartment_mode")
+    if isinstance(selection, str) and mode in {"new", "existing"}:
+        scope, kind = (config.get("tenancy"), "tenancy") if mode == "new" else (selection, "compartment")
+        if not selection.strip():
+            raise ValueError("The runner compartment selection is empty")
+    elif isinstance(selection, dict) and mode is None:
+        scope, kind = selection.get("id"), "compartment"
+        outputs = context.get("terraform_outputs")
+        if not isinstance(outputs, dict) or outputs.get("compartment_ocid") != scope:
+            raise ValueError("Runner and Terraform compartment identities differ")
+    else:
+        raise ValueError("Invalid runner compartment context")
+    if not isinstance(scope, str) or not re.fullmatch(r"ocid1\." + kind + r"\.[A-Za-z0-9_.-]+", scope):
+        raise ValueError("Invalid runner compartment or tenancy OCID")
+    return scope
+
+
 def vm_inputs(context, config, compute, identity):
     values = context.get("inputs", {})
-    scope = context.get("compartment", {}).get("id") or config["tenancy"]
+    scope = compartment_scope(context, config)
     shape = values.get("vm_shape", "VM.Standard.E5.Flex")
     image_id = values.get("image_ocid")
     if not image_id:

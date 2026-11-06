@@ -17,6 +17,11 @@ sys.path.insert(0, str(ROOT / "apps/backend"))
 from app.config import Settings
 from app.services.oci.identity import IdentityClient
 from app.services.oci.aidp import AidpClient
+from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
+
+
+class CatalogSelectionError(ValueError):
+    pass
 
 
 def source_context(context):
@@ -58,6 +63,8 @@ def validate_inputs(inputs):
             raise ValueError(f"Invalid {name}")
     if inputs.get("aidp_mode") not in {"new", "existing"}:
         raise ValueError("aidp_mode must be new or existing")
+    if inputs["aidp_mode"] == "new" and inputs.get("existing_catalog_key"):
+        raise CatalogSelectionError("An external catalog key requires an existing AIDP platform")
     if inputs["aidp_mode"] == "existing":
         if not str(inputs.get("existing_ai_data_platform_ocid", "")).startswith("ocid1.aidataplatform."):
             raise ValueError("An exact existing AIDP OCID is required")
@@ -84,7 +91,46 @@ def verify_administrator(inputs, domain, user):
         raise ValueError("Selected administrator is inactive or belongs to another domain")
 
 
-def probe(context, config, *, domain_client=None, api_factory=AidpApi):
+def installation_identity(context, config, platform_id):
+    inputs = context["inputs"]
+    return {"product": "gods_eye_view", "deployment_id": context["deployment_id"],
+        "platform_id": platform_id, "admin_user_ocid": inputs["admin_user_ocid"],
+        "identity_domain_id": inputs["identity_domain_id"], "operator_user_ocid": config["user"]}
+
+
+def recorded_catalog_key(context, config, storage):
+    namespace = storage.get_namespace(compartment_id=config["tenancy"]).data
+    store = ObjectControlStore(storage, namespace, context["inputs"]["artifacts_bucket_name"],
+        prefix=".control/gods_eye_view/install/")
+    receipt, _etag = store.get_json("operation.json")
+    if receipt is None:
+        return ""
+    expected = installation_identity(context, config, context["inputs"]["existing_ai_data_platform_ocid"])
+    if receipt.get("identity") != expected:
+        raise ValueError("Installation receipt belongs to a different target or administrator")
+    key = receipt.get("resources", {}).get("catalog", "")
+    if not isinstance(key, str):
+        raise ValueError("Recorded catalog identity is invalid")
+    return key
+
+
+def verify_catalog_selection(api, selected_key, recorded_key=""):
+    if selected_key and recorded_key and selected_key != recorded_key:
+        raise CatalogSelectionError("Selected catalog differs from this installation's exact receipt")
+    key = selected_key or recorded_key
+    if key:
+        if not isinstance(key, str) or len(key) > 256 or any(c in key for c in "\r\n\x00"):
+            raise CatalogSelectionError("Invalid catalog key")
+        value = api.request("GET", "/catalogs/" + quote(key, safe="")).body
+        if value.get("key") != key or value.get("displayName") != "oci_medallion" or value.get("catalogType") != "INTERNAL":
+            raise CatalogSelectionError("Selected catalog differs from its exact INTERNAL identity")
+        return value
+    if any(value.get("displayName") == "oci_medallion" for value in api.list_all("/catalogs")):
+        raise CatalogSelectionError("Existing oci_medallion requires its exact existing_catalog_key or this installation's verified receipt")
+    return None
+
+
+def probe(context, config, *, domain_client=None, api_factory=AidpApi, known_catalog_key=None):
     import oci
     from oci._vendor import requests
 
@@ -123,6 +169,10 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi):
                 aidp_platform_id=values["existing_ai_data_platform_ocid"])
             if not asyncio.run(effective_admin(settings, signer, users["Resources"][0]["id"], api)):
                 raise ValueError("Selected administrator lacks effective platform permissions")
+            if known_catalog_key is None:
+                storage = oci.object_storage.ObjectStorageClient(config, signer=signer)
+                known_catalog_key = recorded_catalog_key(context, config, storage)
+            verify_catalog_selection(api, values.get("existing_catalog_key", ""), known_catalog_key)
         finally:
             api.session.close()
     else:
@@ -142,13 +192,16 @@ def main():
         from image_assets import inspect_handoff
         inspect_handoff(context)
         result = probe(context, config)
-        result["events"].append({"name": "Private release metadata", "status": "passed",
+        result["events"].append({"name": "Release metadata", "status": "passed",
             "message": "Immutable source, access and image manifests verified; archive bytes are checked before VM delivery"})
         code = 0
+    except CatalogSelectionError as error:
+        result = {"inputs": {}, "events": [{"name": "Catalog selection", "status": "failed", "message": str(error)}]}
+        code = 1
     except Exception:
         # HTTP bodies/config may carry sensitive information; keep the runner event bounded.
         result = {"inputs": {}, "events": [{"name": "Administrator authorization", "status": "failed",
-            "message": "Private release handoff, identity, workspace or effective permissions could not be verified"}]}
+            "message": "Release handoff, compartment, catalog, identity, workspace or effective permissions could not be verified"}]}
         code = 1
     result_path.write_text(json.dumps(result) + "\n", encoding="utf-8")
     result_path.chmod(0o600)
