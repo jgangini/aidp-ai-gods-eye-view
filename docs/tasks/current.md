@@ -2,6 +2,14 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
+## Candidato de cinco buckets independientes v2.1.0
+
+Fuente `ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42272619772](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42272619772) con seis jobs aprobados. Artifacts y las cuatro capas Medallion tienen modos new/existing independientes, textbox nuevo y selector OCI; no hay control global ni fallback. Se conservan direcciones Terraform y `prevent_destroy`, se verifica región/compartimento y se comparan nombres/modos contra outputs antes del journal. El acceso sigue por OCI OIDC y OCI Run Command, sin cuenta local ni credenciales SSH nuevas.
+
+Postflight: 1948 passed, seis skips y ocho mocks Terraform aprobados. Sentrux sigue DEGRADED, con calidad 6610→6620; Graphify existente actualizado a 3993 nodos/11388 aristas y wiki renovada, con límite HCL documentado. El coordinador reportó parser estricto y SSR all-new/all-existing aprobados, ocho grupos y 23 campos. [Evidencia completa](../evidence/individual-bucket-ownership.md).
+
+Borrador ID `436861738`, seis assets verificados y handoff/CAS simulado aprobado. No hubo intento de publicación desde este chat. El coordinador asumió la operación y reportó un rechazo real de auto_review al publicar v2.1.0/marcar latest: la autorización reconocida cubre solo v2.0.1. El comando no se ejecutó; el coordinador ya solicitó aprobación específica al usuario. El [recibo](../releases/v2.1.0-candidate.json) fija el paquete intacto pendiente de esa respuesta. Sin OCI ni recursos compartidos modificados.
+
 ## Formulario alineado con Governance v2.0.1 publicado
 
 Fuente `68412c3c609b8b140224e863477873cb49e947b5`, [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1), [CI 42262217605](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42262217605) con seis jobs aprobados. Grupos Governance, 14 combobox/textbox, selectores AIDP/workspace/modelo, nombre AIDP con default `aidp_gods_eye_view`, bucket mode booleano, imagen local CTN y descripción inglesa de 321 caracteres con el enlace original. Tag y prefijo operativos quedan internos, con binding y conservación en Resume.

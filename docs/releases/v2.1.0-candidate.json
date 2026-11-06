@@ -1,0 +1,209 @@
+{
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "proposed_tag": "v2.1.0",
+  "commit": "ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+  "release_id": 436861738,
+  "draft_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-cc7c0f93c35593fa008c",
+  "draft": true,
+  "immutable": false,
+  "prerelease": false,
+  "published": false,
+  "publication_status": "Blocked: coordinator reported an actual auto_review rejection of v2.1.0 publication/latest; authorization on record covers v2.0.1 only",
+  "assets": {
+    "gods-eye-view-api-image-amd64.tar.gz": {
+      "asset_id": 718170438,
+      "size": 150634366,
+      "sha256": "f78d5dec42e447b3e0913d695538463e419a7b67cb41b1e92642eb3195aa26e8"
+    },
+    "gods-eye-view-api-release.json": {
+      "asset_id": 718170439,
+      "size": 561,
+      "sha256": "7590c013ccecea72887a980aa461399ca39819f042b221c627eb9c882e3c026b"
+    },
+    "gods-eye-view-gateway-image-amd64.tar.gz": {
+      "asset_id": 718170445,
+      "size": 20445455,
+      "sha256": "b05fbfaab71fd43ca8d661e6cc01961f8463b2444f62a2883833ab0379a3e952"
+    },
+    "gods-eye-view-gateway-release.json": {
+      "asset_id": 718170466,
+      "size": 569,
+      "sha256": "46bfafaf117ab56611b4214c11a9a3a7f138010ed460f18852a069a9e17d739d"
+    },
+    "gods-eye-view-image-amd64.tar.gz": {
+      "asset_id": 718170442,
+      "size": 261957568,
+      "sha256": "10669bb4824e2adba42eac53c2dadffc5198e6129a9fd53dedea0e6dd38110af"
+    },
+    "gods-eye-view-release.json": {
+      "asset_id": 718170441,
+      "size": 553,
+      "sha256": "8ef37dcbc931be679518077953e11175e4a8c584e6f3b56727f3379854cc516d"
+    }
+  },
+  "images": {
+    "api": {
+      "asset_name": "gods-eye-view-api-image-amd64.tar.gz",
+      "image_id": "sha256:920571d868acdfb4a49a133d025789789d917b8fdddd235f4ffe2b3102a4abf3",
+      "image_tag": "gods-eye-view-api:ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+      "platform": "linux/amd64",
+      "sha256": "f78d5dec42e447b3e0913d695538463e419a7b67cb41b1e92642eb3195aa26e8"
+    },
+    "viewer": {
+      "asset_name": "gods-eye-view-image-amd64.tar.gz",
+      "image_id": "sha256:52cdabd8dfa29a74871fb57a68b05e9d0562d0b4f900735fe860e32df686bcc7",
+      "image_tag": "gods-eye-view:ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+      "platform": "linux/amd64",
+      "sha256": "10669bb4824e2adba42eac53c2dadffc5198e6129a9fd53dedea0e6dd38110af"
+    },
+    "gateway": {
+      "asset_name": "gods-eye-view-gateway-image-amd64.tar.gz",
+      "image_id": "sha256:cdcccfb9a9db709f5c5439cdbb3843fc00eae760a7d3c0914be71d56e24932c0",
+      "image_tag": "gods-eye-view-gateway:ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+      "platform": "linux/amd64",
+      "sha256": "b05fbfaab71fd43ca8d661e6cc01961f8463b2444f62a2883833ab0379a3e952"
+    }
+  },
+  "ci_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42272619772",
+  "source_archive": {
+    "limits": {
+      "github_archive_max_bytes": 104857600,
+      "github_source_max_files": 250,
+      "github_source_max_extracted_bytes": 10485760
+    },
+    "archive_bytes": 46660380,
+    "selected_files": 88,
+    "selected_bytes": 1176951,
+    "outputs": [
+      "ai_data_platform_id",
+      "instance_id",
+      "public_origin",
+      "admin_user_ocid",
+      "identity_domain_id",
+      "existing_workspace_key",
+      "default_workspace_name",
+      "objectstorage_namespace",
+      "medallion_bucket_names",
+      "artifacts_bucket_name",
+      "compartment_ocid",
+      "identity_domain_url",
+      "gods_eye_view_group_id",
+      "viewer_oidc_app_name",
+      "agent_model_id",
+      "workspace_key",
+      "application_url",
+      "gods_eye_view_native_status",
+      "gods_eye_view_snapshot_version",
+      "viewer_certificate_sha256",
+      "viewer_certificate_pem",
+      "bucket_modes"
+    ]
+  },
+  "vm_bundle": {
+    "bytes": 22709,
+    "sha256": "7fab22b0c20c405f79718b58b77071f64c99dd4d3c0c61ea0c7bc57bf44a4a7b",
+    "zip_metadata_platform": "Linux CTN/CI",
+    "ci_artifact_sha256_verified": true
+  },
+  "host_revision": {
+    "protocol": 2,
+    "sha256": "77909c23cfa39ac899a9c04e817cd2290fee4ccdbc16f6bea2acf708c37737d5",
+    "same_as_v2_0_1": true
+  },
+  "handoff": {
+    "release_id": 436861738,
+    "commit": "ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+    "preflight_json_only": "passed",
+    "raw_context_without_operational_fields": "passed",
+    "independent_artifacts_and_medallion_bindings": "passed",
+    "post_apply_six_assets": "passed",
+    "simulated_cas_uploads": 3,
+    "repeat_uploads": 0,
+    "oci_mutations": 0
+  },
+  "image_review": {
+    "archives": 3,
+    "assets": 6,
+    "layers": 34,
+    "layer_files": 80909,
+    "layer_bytes": 1565695178
+  },
+  "new_pyc_candidates": {
+    "files": 6,
+    "compiled_payloads_unchanged": true,
+    "header_bytes_excluded": 16
+  },
+  "validation": {
+    "preflight": "DEGRADED; original baseline retained",
+    "local_product_passed": 1948,
+    "local_product_skipped": 6,
+    "ci_product_passed": 1948,
+    "ci_product_skipped": 6,
+    "terraform_mock_passed": 8,
+    "controls_passed": 89,
+    "native_viewer_passed": 119,
+    "sentrux": {
+      "result": "DEGRADED",
+      "quality_initial": 7780,
+      "quality_pre": 6610,
+      "quality_post": 6620,
+      "coupling": 0.07,
+      "complex_functions": 104,
+      "cycles": 0,
+      "god_files": 0,
+      "custom_rules": false
+    },
+    "graphify": {
+      "result": "existing graph updated",
+      "nodes": 3993,
+      "edges": 11388,
+      "communities": 171,
+      "wiki_articles": 181,
+      "dangling_edges": 0,
+      "source_commit": "ca0c4a5dbfd8614c5aacfc03aaf3b62419038a33",
+      "llm_tokens": 0,
+      "limitations": [
+        "HCL extractor tree_sitter_hcl missing",
+        "Parallel AST unavailable on Windows; sequential update completed"
+      ]
+    },
+    "native_oci_acceptance": "pending",
+    "browser_review": "Coordinator-owned; not performed by this task",
+    "coordinator_ctn_report": "Strict parser and real SSR passed for all-new and all-existing defaults; 8 groups and 23 fields"
+  },
+  "previous_releases_verified_unchanged": [
+    "v1.0.0",
+    "v1.0.1",
+    "v1.0.2",
+    "v1.0.3",
+    "v2.0.0",
+    "v2.0.1"
+  ],
+  "oci_mutations": 0,
+  "pull_request": "https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1",
+  "manifest_schema_version": 2,
+  "required_engine": "Deploy Studio schema 2 with active-bucket selectors",
+  "form": {
+    "groups": 8,
+    "fields": 23,
+    "bucket_choices": 5,
+    "global_mode": false,
+    "legacy_fallback": false
+  },
+  "authentication": {
+    "web": "OCI Identity Domains OIDC",
+    "administrator": "Selected admin_user_ocid with effective AIDP permissions",
+    "vm": "OCI Compute Instance Run Command",
+    "local_username_password": false,
+    "ssh_credentials_added": false
+  },
+  "publication_review": {
+    "source": "Coordinator report",
+    "attempt_from_this_chat": false,
+    "attempted_by_coordinator": true,
+    "command_executed": false,
+    "release_published": false,
+    "reason": "Specific approval required for v2.1.0 and marking it latest; recorded approval covers v2.0.1 only",
+    "approval_question_pending_in_coordinator": true
+  }
+}
