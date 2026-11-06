@@ -166,7 +166,28 @@
       ]
     },
     "native_oci_acceptance": "pending",
-    "browser_review": "Coordinator-owned; not performed by this task",
+    "browser_review": "Local default-form review passed, reported by coordinator; not performed by this chat",
+    "coordinator_browser_report": {
+      "release_selected": "v2.1.0",
+      "form_reset_to_defaults": true,
+      "viewport_width_px": 1282,
+      "mode_x_px": 53,
+      "new_name_x_px": 377.125,
+      "rows": [
+        {"layer": "artifacts", "default_name": "oci_artifacts", "mode_y_px": 1471, "new_name_y_px": 1471},
+        {"layer": "landing", "default_name": "oci_landing", "mode_y_px": 1562, "new_name_y_px": 1562},
+        {"layer": "bronze", "default_name": "oci_bronze", "mode_y_px": 1630, "new_name_y_px": 1630},
+        {"layer": "silver", "default_name": "oci_silver", "mode_y_px": 1698, "new_name_y_px": 1698},
+        {"layer": "gold", "default_name": "oci_gold", "mode_y_px": 1766, "new_name_y_px": 1766}
+      ],
+      "global_bucket_control_present": false,
+      "checkboxes_present": false,
+      "fields_locked_until_oci_validation": true,
+      "local_release_cache_refreshed": true,
+      "local_api_health_ok": true,
+      "oci_operations": false,
+      "screenshots_taken": false
+    },
     "coordinator_ctn_report": "Strict parser and real SSR passed for all-new and all-existing defaults; 8 groups and 23 fields"
   },
   "previous_releases_verified_unchanged": [
