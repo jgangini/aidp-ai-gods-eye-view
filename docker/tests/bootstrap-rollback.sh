@@ -23,6 +23,7 @@ install() {
   if "$directory"; then mkdir -p "${args[@]}"; else cp "${args[@]}"; fi
 }
 docker() {
+  if [[ "${1:-} ${2:-}" == 'image inspect' ]]; then printf '%s\n' "$3"; return 0; fi
   local envfile="" previous=""
   for arg in "$@"; do
     [[ "$previous" != --env-file ]] || envfile="$arg"
@@ -41,7 +42,7 @@ docker() {
 write_env() {
   local version="$1" digest
   printf -v digest '%064d' "$version"
-  printf 'API_IMAGE=example/api@sha256:%s\nVIEWER_IMAGE=example/viewer@sha256:%s\nGATEWAY_IMAGE=example/gateway@sha256:%s\nPUBLIC_HOST=viewer.example\nTOKEN=fixture-%s\n' "$digest" "$digest" "$digest" "$version" > "$ROOT/runtime.env"
+  printf 'API_IMAGE=sha256:%s\nVIEWER_IMAGE=sha256:%s\nGATEWAY_IMAGE=sha256:%s\nPUBLIC_HOST=viewer.example\nTOKEN=fixture-%s\n' "$digest" "$digest" "$digest" "$version" > "$ROOT/runtime.env"
 }
 
 write_env 1

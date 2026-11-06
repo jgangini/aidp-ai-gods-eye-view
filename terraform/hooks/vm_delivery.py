@@ -37,7 +37,7 @@ def run_command(client, oci_module, outputs, command, token):
     raise ValueError("VM runtime operation outcome unknown; reconcile before another command")
 
 
-def runtime_environment(context):
+def runtime_environment(context, assets):
     inputs, outputs = context["inputs"], context["terraform_outputs"]
     values = {"ADMIN_USER_OCID": inputs["admin_user_ocid"], "IDENTITY_DOMAIN_ID": inputs["identity_domain_id"],
         "IDENTITY_DOMAIN_URL": outputs["identity_domain_url"], "IDENTITY_GODS_EYE_VIEW_GROUP_ID": outputs["gods_eye_view_group_id"],
@@ -48,11 +48,9 @@ def runtime_environment(context):
         "GODS_EYE_CONTROL_BUCKET": outputs["medallion_bucket_names"]["gold"], "ARTIFACTS_BUCKET_NAME": outputs["artifacts_bucket_name"],
         "LAB_MARKER": context["deployment_id"], "GODS_EYE_VIEW_ENABLED": "true", "GODS_EYE_VIEW_MODE": "oci", "COOKIE_SECURE": "true",
         "PUBLIC_HOST": urlsplit(outputs["public_origin"]).hostname}
-    for key in ("api", "viewer", "gateway"):
-        image = inputs[key + "_image"]
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9./:_-]*@sha256:[a-f0-9]{64}", image):
-            raise ValueError("All product images must be pinned by digest")
-        values[key.upper() + "_IMAGE"] = image
+    from image_assets_vm import validate_assets
+    for asset in validate_assets(assets):
+        values[asset["component"].upper() + "_IMAGE"] = asset["image_id"]
     if any(not isinstance(v, str) or not v or any(c in v for c in "\r\n\x00") for v in values.values()):
         raise ValueError("Invalid runtime binding")
     return "".join(f"{key}={value}\n" for key, value in values.items())
@@ -61,6 +59,8 @@ def runtime_environment(context):
 def deliver(context, config, signer, storage, secrets):
     import oci
     outputs = context["terraform_outputs"]
+    from image_assets import stage_images
+    assets = stage_images(context, secrets, storage)
     expected = binding(context["deployment_id"], config["user"], config["fingerprint"])
     client = oci.compute_instance_agent.ComputeInstanceAgentClient(config, signer=signer)
     public = fetch_bootstrap_public_key(client, oci,
@@ -77,9 +77,8 @@ def deliver(context, config, signer, storage, secrets):
             raise ValueError("TLS certificate and key required in protected post-apply inputs")
     # Private key and TLS material remain out of Terraform variables, user-data and result files.
     payload = {"config": render_runtime_oci_config(config), "key": Path(config["key_file"]).read_text(encoding="utf-8"),
-        "runtime_env": runtime_environment(context), "tls_certificate": secrets["tls_certificate"], "tls_key": secrets["tls_key"]}
-    if secrets.get("registry_config"):
-        payload["registry_config"] = secrets["registry_config"]
+        "runtime_env": runtime_environment(context, assets), "tls_certificate": secrets["tls_certificate"], "tls_key": secrets["tls_key"],
+        "image_assets": json.dumps(assets, sort_keys=True)}
     encrypted = encrypt(public.encode(), payload, expected)
     object_name = f".bootstrap/gods-eye-view/{context['deployment_id']}/operator.json"
     try:

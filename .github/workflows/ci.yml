@@ -1,5 +1,10 @@
 name: Candidate checks
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    paths-ignore: ['docs/**', 'README.md']
+  pull_request:
+    paths-ignore: ['docs/**', 'README.md']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -42,6 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f ${{ matrix.dockerfile }} -t aidp-ai-gods-eye-view-${{ matrix.component }}:candidate .
+      - run: python3 scripts/release/package_candidate.py --component ${{ matrix.component }} --image aidp-ai-gods-eye-view-${{ matrix.component }}:candidate --commit ${{ github.sha }} --release candidate --output candidate-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-image-${{ matrix.component }}
+          path: candidate-assets/*
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -53,7 +63,7 @@ jobs:
         working-directory: apps/frontend
       - run: npm test && npm run build
         working-directory: apps/frontend
-      - run: python3 modules/ai-gods-eye-view/prepare_upstream.py
+      - run: python3 modules/ai-gods-eye-view/prepare_upstream.py --output modules/ai-gods-eye-view/.upstream
       - run: npm ci --ignore-scripts
         working-directory: modules/ai-gods-eye-view/.upstream
       - run: node --test modules/ai-gods-eye-view/tests/*.test.mjs

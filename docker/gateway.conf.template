@@ -53,12 +53,16 @@ server {
     location ^~ /gods-eye-view/__ { return 404; }
     location /gods-eye-view/ {
         auth_request /_viewer_session;
+        error_page 500 = @viewer_access_unavailable;
+        proxy_intercept_errors off;
         error_page 401 = @signin;
         proxy_pass http://viewer:8081/;
         include /etc/nginx/viewer-headers.conf;
     }
     location ~ ^/api/(setup|opensky|opensky-track|adsblol|adsbdb|celestrak|tomtom|firms|launches|terrain|overpass|military-installations|regional-brief|geocode|weather-effects|cctv|radio|gbfs|local-receivers|transit|ais-live|openai|google|realtime|route|wind|weather|cyclones|fire-perimeters)(/|$) {
         auth_request /_viewer_session;
+        error_page 500 = @viewer_access_unavailable;
+        proxy_intercept_errors off;
         proxy_pass http://viewer:8081;
         include /etc/nginx/viewer-headers.conf;
     }
@@ -80,6 +84,12 @@ server {
         proxy_set_header X-Gods-Eye-View-Role "";
         proxy_set_header X-Gev-Origin https://${PUBLIC_HOST};
         proxy_read_timeout 300s;
+    }
+    location @viewer_access_unavailable {
+        default_type application/json;
+        add_header Retry-After 2 always;
+        add_header Cache-Control no-store always;
+        return 503 '{"detail":"Viewer access could not be verified"}';
     }
     location @signin { return 302 /api/auth/oci/login; }
     location / { return 404; }

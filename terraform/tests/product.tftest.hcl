@@ -4,6 +4,7 @@ mock_provider "oci" {
   }
 }
 mock_provider "oci" { alias = "home" }
+mock_provider "time" {}
 variables {
   home_region            = "us-ashburn-1"
   region                 = "us-chicago-1"

@@ -27,9 +27,6 @@ prepare() {
 }
 
 start() {
-  if [[ -s "$ROOT/registry/config.json" ]]; then
-    export DOCKER_CONFIG="$ROOT/registry"
-  fi
   for required in runtime.env oci/config tls/fullchain.pem tls/privkey.pem; do
     [[ -s "$ROOT/$required" ]] || { echo "Missing prepared runtime input: $required" >&2; exit 1; }
   done
@@ -55,7 +52,8 @@ start() {
     if [[ "$name" == PUBLIC_HOST ]]; then
       [[ "$value" =~ ^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] || { echo 'Invalid PUBLIC_HOST' >&2; exit 1; }
     else
-      [[ "$value" =~ ^[A-Za-z0-9][A-Za-z0-9./:_-]*@sha256:[a-f0-9]{64}$ ]] || { echo "Immutable digest required for $name" >&2; exit 1; }
+      [[ "$value" =~ ^sha256:[a-f0-9]{64}$ ]] || { echo "Immutable local image ID required for $name" >&2; exit 1; }
+      [[ "$(docker image inspect "$value" --format '{{.Id}}')" == "$value" ]] || { echo "Verified image is unavailable for $name" >&2; exit 1; }
     fi
     printf '%s=%s\n' "$name" "$value" >> "$candidate/release.env"
   done
@@ -63,7 +61,6 @@ start() {
   (cd "$candidate" && sha256sum release.env runtime.env > receipt.sha256)
   local compose=(docker compose --project-directory "$SOURCE" --env-file "$candidate/release.env" -f "$SOURCE/compose.yml")
   "${compose[@]}" config --quiet
-  "${compose[@]}" pull
   if ! "${compose[@]}" up -d --wait --wait-timeout 180; then
     if [[ -n "$current" ]]; then
       install -m 0600 "$current/runtime.env" "$ROOT/runtime.env.pending"

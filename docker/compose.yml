@@ -2,6 +2,7 @@ name: gods-eye-view
 services:
   api:
     image: ${API_IMAGE:?API_IMAGE must be an immutable digest reference}
+    pull_policy: never
     restart: unless-stopped
     user: "65534:65534"
     read_only: true
@@ -23,6 +24,7 @@ services:
       retries: 12
   viewer:
     image: ${VIEWER_IMAGE:?VIEWER_IMAGE must be an immutable digest reference}
+    pull_policy: never
     restart: unless-stopped
     user: "65534:65534"
     read_only: true
@@ -44,6 +46,7 @@ services:
       retries: 12
   gateway:
     image: ${GATEWAY_IMAGE:?GATEWAY_IMAGE must be an immutable digest reference}
+    pull_policy: never
     restart: unless-stopped
     ports: ["443:443"]
     cap_drop: [ALL]

@@ -1,4 +1,12 @@
 # Service policy preserved from frozen source; existing platforms remain externally managed.
+resource "time_sleep" "aidp_iam_propagation" {
+  count           = var.aidp_mode == "new" ? 1 : 0
+  create_duration = "5m"
+  triggers = {
+    policy_id  = oci_identity_policy.aidp_service[0].id
+    statements = sha256(jsonencode(oci_identity_policy.aidp_service[0].statements))
+  }
+}
 resource "oci_identity_policy" "aidp_service" {
   count          = var.aidp_mode == "new" ? 1 : 0
   provider       = oci.home

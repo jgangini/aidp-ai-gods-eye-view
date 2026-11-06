@@ -1,18 +1,56 @@
-# Migration candidate
+# Candidato de migración God’s Eye View
 
-Source: frozen Starter Kits commit `3c82617fd298933995e954955841007253cc0985`.
-Status: implementation authorized; extraction/integration in progress. No OCI mutation or final release publication.
-Destination private repository: `jgangini/aidp-ai-gods-eye-view`, main.
+Estado: candidato ejecutable localmente, con integración final/CI en curso. La instalación privada queda bloqueada por el handoff de artefactos del control plane y la decisión de visibilidad pendiente. No se hicieron mutaciones OCI ni se publicó una release.
 
-Checks: Git main/origin configured preserving docs/.oci. Sentrux baseline saved before extraction (5 files, quality 7780); no custom rules/graph configured. Python 3.12 venv prepared with pinned dependencies; native Windows alias unavailable. Pytest needs require_escalated for Windows temporary ACLs and fresh .local/ basetemp; default attempts failed, rerun renderer 19 passed.
+## Repositorio y alcance
 
-Extraction: 417 tracked source files with docs/extraction-provenance.json; additional explicit native transport symbols with provenance. API independent runtime/identity and source domain tests in progress under backend agent; native viewer/controls and gateway owned by viewer agent. Main owns Terraform/hooks/scripts/docs/CI/Git.
+- Destino: `D:/dev/codex-aidp-ai-gods-eye-view`.
+- Remoto: `https://github.com/jgangini/aidp-ai-gods-eye-view`, verificado privado y con permiso ADMIN. Se conserva esa visibilidad.
+- Primer commit publicado en main: `b82f492a0fa568eda1ad45392ba1e13715f1e37c`. Los cambios de integración posteriores están pendientes de commit/push final al actualizar esta sección.
+- Fuente congelada: `3c82617fd298933995e954955841007253cc0985`. Se extrajeron 417 archivos versionados con procedencia y hashes; no se copiaron `.oci`, estado ni caches.
+- Requisitos: diagnóstico `../migration-assessment.md`, subordinado al plan común del coordinador. Única interfaz integrada al visor; instalación por Deploy Studio.
 
-Verified so far: native viewer 119 tests + 7 bridge tests; native build and React build pass. Terraform validate and 2 mocked new/existing plan tests pass before latest IAM/bootstrap extension (must rerun). Hook/deployment tests: 153 passed, 1 failed due moved _sleep monkeypatch; test now targets native_api (must rerun). Backend agent reports focused domain 220 pass/1 preexisting skip and real RBAC suite 16 pass, additional API 184 pass; integrated postflight not yet run.
+## Implementación y evidencia
 
-Current work: immutable VM bundle/user-data, one-use encrypted OCI-only operator delivery, Deploy Studio schema1 manifest and new/existing identity revalidation. Effective admin resolves USER/GROUP/transitive ROLE via backend implementation. New platform grants selected admin explicitly; no operator impersonation. VM images/gateway integration, artifact build/CI/push still pending. Do not mark candidate deployment ready yet.
+API propia con fábrica `app.main:create_app`, OIDC, membresía/revocación y RBAC por OCID y roles AIDP directos, grupos y roles heredados. No hay portal, login local ni rutas de instalación HTTP. Controles social/sensor/proveedores integrados al visor upstream fijado. Los programas AIDP conservan Gold, Object Storage, CAS, checkpoints y cuatro computes separados.
 
-Review limitation: original combined-stack installation.py/module.py and their tests preserved after automatic approval review rejected removal as potentially weakening tests; new main does not mount install routes. Must document/resolve archive vs product test mapping without evading rejection. Seven high upstream dependency advisories under applicability review; DOMPurify critical preconditions absent in identified Credit call, regression added. No local Docker/browser/cloud executed.
+Terraform implementa selección AIDP new/existing con recursos externos fuera del state administrado. Hooks verifican identidad y administrador, registran recursos exactos y rechazan adopción por nombre. El bundle VM es determinista y se verifica por SHA. La entrega OCI/TLS está cifrada y ligada a operador/fingerprint/deployment; seleccionar administrador no suplanta al firmante. Compose solo publica el gateway TLS y usa imágenes locales por ID inmutable.
 
-No commit or push yet. Next: complete integration, run one postflight including architecture/secret scan, commit and push private candidate main, inspect CI. Native cloud acceptance and final release remain coordinator-owned gates.
-Acceptance and scope: `../migration-assessment.md`; installation through Deploy Studio, only interface is integrated viewer.
+El descargador de assets privados, aislado en `scripts/deployment/image_assets.py`, está probado con HTTP simulado y CAS. El cargador VM verifica bytes, image ID y plataforma antes de activar. No se supone `GH_TOKEN`/`GITHUB_TOKEN` en el hook ni se declara un token de descarga en el manifiesto activo. El coordinador debe cerrar el handoff genérico desde control plane, o adaptar HTTPS anónimo si el usuario decide hacer públicos los repositorios. La decisión no está aprobada por silencio; preflight y post-apply rechazan ese prerequisito faltante antes de mutar recursos.
+
+CI genera artifacts privados de candidato; no los trata como release estable instalable. El empaquetador produce gzip determinista, manifiesto, SHA y plataforma para las tres imágenes. Los dos updaters anteriores de visor/portal se sustituyeron con mapping en `../release-contract.md`.
+
+## Checks realmente ejecutados
+
+- Preflight: baseline Sentrux guardado antes de extraer código (5 archivos, calidad 7780). No reglas propias ni grafo Graphify.
+- Postflight integrado anterior a los últimos cambios de entrega privada: 1517 passed, 6 skipped; tres programas y tres manifests de fuentes AIDP verificados; Terraform validate y dos escenarios mock new/existing passed. Debe repetirse por los cambios de integración posteriores.
+- Frontend: 89 tests passed sin cambiar assertions; build React passed. Visor: 119 tests nativos y build de 753 módulos passed con Node 24.14.0.
+- Puente actualizado: 143 tests passed. Nginx real Linux: prueba de outage/autorización/passthrough passed, en contenedor sin red con mounts explícitos readonly.
+- Entrega privada: 35 tests del descargador/inspector, 26 del empaquetador y pruebas del consumidor VM/cifrado/guards passed en lotes focalizados. Último lote previo a añadir health/handoff: 69 passed. Estos lotes no se suman para fingir cobertura distinta.
+- Rollback real del script con Docker simulado: restaura runtime.env e imágenes del mismo recibo, conserva puntero y checksums; passed.
+- API Docker construida desde base local existente; smoke aislado sin red/puertos passed: health, rechazo anónimo, ausencia de endpoint deploy y exclusión de código combinado/evaluación. Se alineó Pydantic con la versión de pruebas y se reconstruyó la imagen.
+- Parser Pydantic y extractor de archivo reales Deploy Studio: passed para el candidato y paths/entrypoints/include_paths. Revalidación final del manifiesto modificado pendiente.
+- Secret scan: 504 archivos no ignorados, sin patrones de claves/tokens; no lee `.oci` ni imprime valores. Repetir antes de push final.
+- CI inicial `42141235844` sobre b82f492: Terraform e imágenes API/gateway passed; frontend falló por omitir `--output` y Python por referencia al Nginx antiguo. Ambos corregidos con evidencia; siguiente corrida pendiente de push.
+
+## Arquitectura y límites
+
+El gate Sentrux **no está aprobado**: contra el repo vacío, calidad 7780→6587, complejidad 0→98 y coupling 0→0.07. Se conservó el baseline. Comparación adicional con la selección congelada del mismo producto: calidad 6589, 89 funciones complejas, coupling 0.0374. Ambos tienen cero ciclos y cero archivos dominantes. La extracción conserva la complejidad original y añade integración/validadores; estos números no equivalen a un gate aprobado ni justifican sobrescribir el baseline.
+
+Seis skips locales: servicio GIS externo requiere opt-in; cinco comprobaciones necesitan Spark/JDK/Delta o Nginx. La comprobación Nginx se ejecutó aparte realmente en Linux. No se invocaron modelos, actores de pago ni aceptación AIDP real.
+
+Dos archivos/suites del instalador combinado permanecen como evidencia porque auto-review rechazó eliminarlos por posible debilitamiento de validación. No se reintentó ese borrado; no están importados por la aplicación ni incluidos en la imagen. Sus sustitutos y selección del gate están en `apps/backend/tests/validation-scope.json`; no se declara aprobada la suite histórica completa.
+
+Avisos npm heredados: DOMPurify crítico requiere modos ausentes del consumidor Cesium localizado y tiene regresión específica; siete avisos altos se relacionan con QA/build o rutas dev no observadas en preview Linux. No se confirmó alcance productivo en esa revisión; los paquetes siguen presentes y deben reevaluarse si cambia su uso. No se actualizó el pin para ocultar los avisos.
+
+Arko guía responsabilidades, pero no se declara `arko check` aprobado: su perfil actual no valida directamente el layout de módulos conservado. La independencia se verifica con tests reales de composición y cierre. En Windows se usan temporales nuevos `.local/pytest-*`, sin borrar corridas previas; ACLs requieren escalación para pytest.
+
+## Gates restantes
+
+1. Finalizar checks de los últimos cambios, commit/push y CI verde del candidato exacto.
+2. Decisión explícita de visibilidad y contrato genérico de handoff privado a cargo del coordinador. No hay token supuesto ni native readiness simulada.
+3. Release estable inmutable con seis assets verificados, todavía no publicada.
+4. Aceptación OCI serializada por coordinador: IAM/roles, bootstrap de VM, new/existing, recuperación tras interrupciones y permisos negativos; task outputs/publicación y conversación de la revisión instalada.
+5. Sentrux permanece informado como no aprobado frente al baseline vacío; revisión de las diferencias nuevas y deuda de complejidad antes de promover producción.
+
+Codex: GPT-6.1 Sol Medium -- integración de contratos, permisos y recuperación. [Referencia](https://learn.chatgpt.com/docs/model-selection)

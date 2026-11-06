@@ -3,6 +3,7 @@ Push-Location (Split-Path -Parent $PSScriptRoot)
 try {
     & $PSScriptRoot/test.ps1
     if ($LASTEXITCODE -ne 0) { throw 'Product checks failed' }
+    if (-not (Test-Path .sentrux/rules.toml)) { Write-Output 'Sentrux custom rules: not configured' }
     sentrux gate .
     if ($LASTEXITCODE -ne 0) { throw 'Sentrux postflight failed' }
     if (Test-Path .sentrux/rules.toml) { sentrux check .; if ($LASTEXITCODE -ne 0) { throw 'Sentrux rules failed' } } else { Write-Output 'Sentrux custom rules: not configured' }

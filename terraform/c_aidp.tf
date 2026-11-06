@@ -3,7 +3,7 @@ locals {
   buckets     = merge(jsondecode(var.medallion_bucket_names), { artifacts = var.artifacts_bucket_name })
 }
 resource "oci_ai_data_platform_ai_data_platform" "product" {
-  depends_on             = [oci_identity_policy.aidp_service]
+  depends_on             = [time_sleep.aidp_iam_propagation]
   count                  = var.aidp_mode == "new" ? 1 : 0
   compartment_id         = var.compartment_ocid
   display_name           = var.name

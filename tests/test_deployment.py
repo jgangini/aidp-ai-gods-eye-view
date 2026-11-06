@@ -14,8 +14,8 @@ sys.path.insert(0, str(ROOT / "terraform/hooks"))
 sys.path.insert(0, str(ROOT / "scripts/deployment"))
 sys.path.insert(0, str(ROOT / "apps/backend"))
 import bootstrap_credentials as envelope
-from preflight import validate_inputs, verify_administrator
-from post_apply import InstallationJournal, grant_new_platform_admin
+from preflight import validate_inputs, verify_administrator, source_context
+from post_apply import InstallationJournal, grant_new_platform_admin, wait_viewer_health, install
 import gods_eye_view_bootstrap as native
 from types import SimpleNamespace
 
@@ -29,6 +29,13 @@ def test_domain_and_active_admin_are_exact():
         ({"id": selected["identity_domain_id"], "lifecycle_state": "ACTIVE"}, {**user, "ocid": "ocid1.user.oc1..operator"})):
         with pytest.raises(ValueError):
             verify_administrator(selected, domain, candidate)
+
+
+def test_source_sha_comes_from_runner_metadata_and_cannot_be_replaced_by_form():
+    context = {"source": {"repository": "https://github.com/jgangini/aidp-ai-gods-eye-view", "commit_sha": "a" * 40}, "inputs": {}}
+    assert source_context(context)["inputs"]["source_commit_sha"] == "a" * 40
+    with pytest.raises(ValueError, match="differs"):
+        source_context({**context, "inputs": {"source_commit_sha": "b" * 40}})
 
 
 def test_buckets_and_existing_workspace_fail_closed():
@@ -50,7 +57,10 @@ def test_envelope_is_bound_authenticated_and_single_use(tmp_path):
     public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
     payload = {"config": f"[DEFAULT]\nuser=ocid1.user.oc1..operator\nfingerprint={fingerprint}\n",
         "key": operator.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode(),
-        "runtime_env": "GODS_EYE_VIEW_MODE=oci\n", "tls_certificate": "test-certificate", "tls_key": "test-key"}
+        "runtime_env": "GODS_EYE_VIEW_MODE=oci\n", "tls_certificate": "test-certificate", "tls_key": "test-key",
+        "image_assets": json.dumps([{"component": component, "object_name": "releases/" + "a" * 40 + "/" + prefix + "-image-amd64.tar.gz",
+            "archive_sha256": "b" * 64, "image_id": "sha256:" + "c" * 64, "image_tag": prefix + ":" + "a" * 40}
+            for component, prefix in (("api", "gods-eye-view-api"), ("viewer", "gods-eye-view"), ("gateway", "gods-eye-view-gateway"))])}
     encrypted = envelope.encrypt(public, payload, expected)
     with pytest.raises(ValueError):
         envelope.consume(encrypted, tmp_path, {**expected, "deployment_id": "other"})
@@ -140,3 +150,24 @@ def test_hidden_compute_cannot_bypass_identity_receipt():
     api = SimpleNamespace(installation_journal=journal)
     with pytest.raises(RuntimeError, match="no adoption"):
         native.hidden_compute_detail(api, "/workspaces/ws/clusters", "selected", "untracked-key", "SUCCEEDED")
+
+
+def test_unconfigured_private_handoff_fails_before_any_cloud_client_or_journal():
+    with pytest.raises(RuntimeError, match="control-plane artifact handoff"):
+        install({}, {}, None, None, secrets={})
+
+
+def test_viewer_health_requires_success_and_bounded_wait():
+    class Client:
+        status = 503
+        def get(self, url):
+            assert url in {"https://viewer.example/health", "https://viewer.example/api/gods-eye-view/session"}
+            if url.endswith("/session"):
+                return SimpleNamespace(status_code=401)
+            return SimpleNamespace(status_code=self.status)
+    client = Client()
+    ticks = iter((0, 6))
+    with pytest.raises(ValueError, match="not complete"):
+        wait_viewer_health("https://viewer.example", "", 5, client=client, clock=lambda: next(ticks), sleep=lambda _: None)
+    client.status = 200
+    wait_viewer_health("https://viewer.example", "", 5, client=client, clock=lambda: 0, sleep=lambda _: None)

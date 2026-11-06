@@ -6,7 +6,7 @@ import io
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
-FILES = ("docker/bootstrap.sh", "docker/compose.yml", "scripts/deployment/bootstrap_credentials.py")
+FILES = ("docker/bootstrap.sh", "docker/compose.yml", "scripts/deployment/bootstrap_credentials.py", "scripts/deployment/image_assets_vm.py")
 
 
 def build(root=ROOT):

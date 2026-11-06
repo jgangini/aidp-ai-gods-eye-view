@@ -44,9 +44,10 @@ SUDO
 chmod 0440 /etc/sudoers.d/gods-eye-view-run-command
 visudo -cf /etc/sudoers.d/gods-eye-view-run-command
 cat > /opt/gods-eye-view/receive.py <<'PY'
-import pathlib, sys, time
+import pathlib, sys, time, json
 sys.path.insert(0, '/opt/gods-eye-view/scripts/deployment')
 import bootstrap_credentials as bootstrap
+from image_assets_vm import load_images
 import oci
 client = oci.object_storage.ObjectStorageClient({}, signer=oci.auth.signers.InstancePrincipalsSecurityTokenSigner())
 expected = bootstrap.binding('${deployment_id}', '${operator_user_ocid}', '${operator_fingerprint}')
@@ -55,12 +56,15 @@ object_name = '.bootstrap/gods-eye-view/${deployment_id}/operator.json'
 for attempt in range(360):
     try:
         result = client.get_object('${namespace}', '${bucket}', object_name)
-        bootstrap.consume(result.data.content, root, expected)
+        bootstrap.consume(result.data.content, root, expected, finalize=False)
+        load_images(client, '${namespace}', '${bucket}', json.loads((root / 'bootstrap/image-assets.json').read_text()))
         client.delete_object('${namespace}', '${bucket}', object_name, if_match=result.headers['etag'])
         try:
             client.head_object('${namespace}', '${bucket}', object_name)
         except oci.exceptions.ServiceError as missing:
-            if missing.status == 404: break
+            if missing.status == 404:
+                bootstrap.complete(root, expected)
+                break
             raise
         raise SystemExit('Bootstrap object still present; refusing readiness')
     except oci.exceptions.ServiceError as exc:

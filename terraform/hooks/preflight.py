@@ -18,6 +18,21 @@ from app.services.oci.identity import IdentityClient
 from app.services.oci.aidp import AidpClient
 
 
+class ArtifactHandoffPending(RuntimeError):
+    pass
+
+
+def source_context(context):
+    source = context.get("source", {})
+    commit = source.get("commit_sha", "")
+    if source.get("repository") != "https://github.com/jgangini/aidp-ai-gods-eye-view" or not re.fullmatch(r"[a-f0-9]{40}", commit):
+        raise ValueError("Runner source identity is invalid")
+    inputs = context.get("inputs", {})
+    if inputs.get("source_commit_sha", commit) != commit:
+        raise ValueError("Terraform source SHA differs from the runner's immutable source")
+    return {**context, "inputs": {**inputs, "source_commit_sha": commit}}
+
+
 class RoleClient(AidpClient):
     """Use the runner's authorized signer with the runtime's effective-role resolver."""
     def __init__(self, api):
@@ -78,6 +93,7 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi):
 
     values = validate_inputs(context.get("inputs", {}))
     region = context["region"]
+    config = {**config, "region": region}
     signer = build_signer(config)
     image = oci.core.ComputeClient(config, signer=signer).get_image(values["image_ocid"]).data
     if image.operating_system != "Oracle Linux" or not str(image.operating_system_version).startswith("9"):
@@ -125,10 +141,21 @@ def probe(context, config, *, domain_client=None, api_factory=AidpApi):
 def main():
     result_path = Path(os.environ["DEPLOY_STUDIO_RESULT"])
     try:
-        context = json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8"))
+        context = source_context(json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8")))
         config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
+        sys.path.insert(0, str(ROOT / "scripts/deployment"))
+        from image_assets import inspect_release
+        secrets = json.loads(Path(os.environ["DEPLOY_STUDIO_SECRETS"]).read_text(encoding="utf-8"))["inputs"]
+        if not secrets.get("release_download_token"):
+            raise ArtifactHandoffPending("Private image delivery awaits the coordinator's control-plane artifact handoff; no hook token is assumed")
+        inspect_release(context, secrets)
         result = probe(context, config)
+        result["events"].append({"name": "Private release metadata", "status": "passed",
+            "message": "Immutable source, access and image manifests verified; archive bytes are checked before VM delivery"})
         code = 0
+    except ArtifactHandoffPending as pending:
+        result = {"inputs": {}, "events": [{"name": "Private image handoff", "status": "failed", "message": str(pending)}]}
+        code = 1
     except Exception:
         # HTTP bodies/config may carry sensitive information; keep the runner event bounded.
         result = {"inputs": {}, "events": [{"name": "Administrator authorization", "status": "failed",

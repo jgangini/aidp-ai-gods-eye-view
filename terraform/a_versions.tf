@@ -1,7 +1,8 @@
 terraform {
   required_version = ">= 1.5.7"
   required_providers {
-    oci = { source = "oracle/oci", version = "= 8.28.0" }
+    oci  = { source = "oracle/oci", version = "= 8.28.0" }
+    time = { source = "hashicorp/time", version = "~> 0.13" }
   }
 }
 provider "oci" { region = var.region }

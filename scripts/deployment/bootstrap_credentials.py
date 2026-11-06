@@ -61,7 +61,7 @@ def encrypt(public, payload, expected):
         "ciphertext": base64.b64encode(ciphertext).decode()}).encode()
 
 
-def consume(envelope, root, expected):
+def consume(envelope, root, expected, *, finalize=True):
     document = json.loads(envelope)
     if set(document) != {"schema_version", "binding", "wrapped_key", "nonce", "ciphertext"} or document["schema_version"] != 1 or document["binding"] != expected:
         raise ValueError("Bootstrap envelope identity mismatch")
@@ -70,9 +70,11 @@ def consume(envelope, root, expected):
     aad = json.dumps(expected, sort_keys=True).encode()
     secret = key.decrypt(base64.b64decode(document["wrapped_key"], validate=True), padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=aad))
     payload = json.loads(AESGCM(secret).decrypt(base64.b64decode(document["nonce"], validate=True), base64.b64decode(document["ciphertext"], validate=True), aad))
-    allowed = {"config", "key", "runtime_env", "tls_certificate", "tls_key"}
-    if not allowed <= payload.keys() or set(payload) - allowed - {"registry_config"} or any(not isinstance(value, str) or not value for value in payload.values()):
+    allowed = {"config", "key", "runtime_env", "tls_certificate", "tls_key", "image_assets"}
+    if set(payload) != allowed or any(not isinstance(value, str) or not value for value in payload.values()):
         raise ValueError("Invalid bootstrap payload")
+    from image_assets_vm import validate_assets
+    assets = validate_assets(json.loads(payload["image_assets"]))
     config = configparser.ConfigParser(interpolation=None, strict=True)
     config.read_string(payload["config"])
     operator = serialization.load_pem_private_key(payload["key"].encode(), password=None)
@@ -86,16 +88,17 @@ def consume(envelope, root, expected):
     for path, content in (("oci/key.pem", payload["key"]), ("oci/config", rendered.getvalue()),
         ("runtime.env", payload["runtime_env"]), ("tls/fullchain.pem", payload["tls_certificate"]), ("tls/privkey.pem", payload["tls_key"])):
         atomic(root / path, content.encode())
-    if payload.get("registry_config"):
-        registry = json.loads(payload["registry_config"])
-        if not isinstance(registry, dict) or set(registry) != {"auths"} or not isinstance(registry["auths"], dict):
-            raise ValueError("Invalid private registry configuration")
-        atomic(root / "registry/config.json", payload["registry_config"].encode())
+    atomic(root / "bootstrap/image-assets.json", json.dumps(assets, sort_keys=True).encode())
     # Read back before consuming the recipient key; a failed installation remains retryable.
     if (root / "oci/key.pem").read_text() != payload["key"]:
         raise ValueError("Installed operator key verification failed")
+    if finalize:
+        complete(root, expected)
+
+
+def complete(root, expected):
     atomic(root / "bootstrap/receipt.json", json.dumps(expected, sort_keys=True).encode())
-    private.unlink()
+    (root / "bootstrap/private.pem").unlink()
     (root / "bootstrap/public.pem").unlink(missing_ok=True)
 
 

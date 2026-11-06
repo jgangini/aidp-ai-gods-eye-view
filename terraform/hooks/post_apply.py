@@ -13,7 +13,7 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps/backend"))
 from native_api import AidpApi, ApiRequestError, ensure_workspace_folder, build_signer, load_oci_config
-from preflight import effective_admin, probe
+from preflight import effective_admin, probe, source_context, ArtifactHandoffPending
 from gods_eye_view_bootstrap import bootstrap_gods_eye_view, operation
 from app.config import Settings
 from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
@@ -30,7 +30,7 @@ class InstallationJournal:
         self.state = self.state or {"schema_version": 1, "identity": identity, "resources": {}}
         if self.state.get("lease_until", 0) > clock():
             raise ValueError("Another installation runner owns this operation")
-        self.save(owner=self.owner, lease_until=clock() + 3500, status="running")
+        self.save(owner=self.owner, lease_until=clock() + 3660, status="running")
 
     def save(self, **values):
         state = {**self.state, **values}
@@ -138,7 +138,35 @@ def grant_administrator_reader(context, signer):
     asyncio.run(grant())
 
 
+def wait_viewer_health(origin, certificate, deadline, *, client=None, clock=time.monotonic, sleep=time.sleep):
+    import httpx
+    import ssl
+    owned = client is None
+    if owned:
+        tls = ssl.create_default_context()
+        tls.load_verify_locations(cadata=certificate)
+        client = httpx.Client(verify=tls, follow_redirects=False, timeout=10)
+    try:
+        while clock() < deadline:
+            try:
+                response = client.get(origin + "/health")
+                if response.status_code == 200 and client.get(origin + "/api/gods-eye-view/session").status_code == 401:
+                    return
+            except httpx.HTTPError:
+                pass
+            sleep(5)
+        raise ValueError("Viewer TLS health did not pass; native installation is not complete")
+    finally:
+        if owned:
+            client.close()
+
+
 def install(context, config, signer, storage, *, secrets=None, api_factory=AidpApi, bootstrap=bootstrap_gods_eye_view):
+    if not secrets or not secrets.get("release_download_token"):
+        raise ArtifactHandoffPending("Private image delivery awaits the coordinator's control-plane artifact handoff; no hook token is assumed")
+    deadline = time.monotonic() + 3400
+    import native_api
+    native_api._post_apply_deadline = deadline
     outputs = context["terraform_outputs"]
     inputs = context["inputs"]
     api = api_factory(context["region"], outputs["ai_data_platform_id"], signer, context["deployment_id"])
@@ -182,11 +210,14 @@ def install(context, config, signer, storage, *, secrets=None, api_factory=AidpA
         deliver(context, config, signer, storage, secrets or {})
         result = bootstrap(api, context, outputs, config, signer, storage,
             {"workspace_key": workspace, "catalog_key": managed_catalog["key"], "catalog_name": "oci_medallion"},
-            deadline=time.monotonic() + 3200, ensure_folder=ensure_workspace_folder)
+            deadline=deadline, ensure_folder=ensure_workspace_folder)
+        wait_viewer_health(outputs["public_origin"], secrets["tls_certificate"], deadline)
         journal.save(source_commit_sha=inputs["source_commit_sha"], native=result)
-        journal.release("aidp_ready")
-        return {"schema_version": 1, "status": "aidp_ready", "native": result,
-            "message": "AIDP task/publication checks passed; VM bootstrap and conversation acceptance are separate gates"}
+        journal.release("installed_native_conversation_pending")
+        return {"outputs": {"workspace_key": workspace, "application_url": outputs["public_origin"] + "/gods-eye-view/",
+                "gods_eye_view_native_status": "installed_conversation_pending",
+                "gods_eye_view_snapshot_version": result.get("gods_eye_view_snapshot_version", "")},
+            "events": [{"level": "success", "message": "AIDP task/publication and viewer TLS health checks passed; agent conversation acceptance remains pending"}]}
     except Exception:
         journal.release("needs_attention")
         raise
@@ -198,14 +229,18 @@ def main():
     target = Path(os.environ["DEPLOY_STUDIO_OUTPUT"])
     try:
         import oci
-        context = json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8"))
+        context = source_context(json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8")))
         config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
+        config = {**config, "region": context["region"]}
         signer = build_signer(config)
         secrets = json.loads(Path(os.environ["DEPLOY_STUDIO_SECRETS"]).read_text(encoding="utf-8"))["inputs"]
         result = install(context, config, signer, oci.object_storage.ObjectStorageClient(config, signer=signer), secrets=secrets)
         code = 0
+    except ArtifactHandoffPending as pending:
+        result = {"outputs": {}, "events": [{"level": "error", "message": str(pending)}]}
+        code = 1
     except Exception:
-        result = {"schema_version": 1, "status": "needs_attention", "message": "Installation stopped; preserve the durable operation receipt and reconcile before Resume"}
+        result = {"outputs": {}, "events": [{"level": "error", "message": "Installation stopped; preserve the durable operation receipt and reconcile before Resume"}]}
         code = 1
     target.write_text(json.dumps(result) + "\n", encoding="utf-8")
     target.chmod(0o600)

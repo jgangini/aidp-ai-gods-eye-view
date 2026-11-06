@@ -193,24 +193,6 @@
         "required": true
       },
       {
-        "name": "api_image",
-        "label": "API image by digest",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "viewer_image",
-        "label": "Viewer image by digest",
-        "type": "text",
-        "required": true
-      },
-      {
-        "name": "gateway_image",
-        "label": "Gateway image by digest",
-        "type": "text",
-        "required": true
-      },
-      {
         "name": "tls_certificate",
         "label": "TLS certificate PEM",
         "type": "password",
@@ -229,13 +211,11 @@
         "max_length": 4096
       },
       {
-        "name": "registry_config",
-        "label": "Private registry config JSON (when required)",
-        "type": "password",
-        "secret": true,
-        "transform": "none",
-        "required": false,
-        "max_length": 4096
+        "name": "release_tag",
+        "label": "Stable immutable product release",
+        "type": "text",
+        "required": true,
+        "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
       }
     ]
   },
@@ -244,7 +224,11 @@
     "instance_id",
     "public_origin",
     "admin_user_ocid",
-    "identity_domain_id"
+    "identity_domain_id",
+    "workspace_key",
+    "application_url",
+    "gods_eye_view_native_status",
+    "gods_eye_view_snapshot_version"
   ],
   "preflight": {
     "entrypoint": "terraform/hooks/preflight.py",
@@ -288,7 +272,8 @@
         "type": "text",
         "required": true
       }
-    ]
+    ],
+    "secret_inputs": []
   },
   "post_apply": {
     "entrypoint": "terraform/hooks/post_apply.py",
@@ -302,8 +287,7 @@
     ],
     "secret_inputs": [
       "tls_certificate",
-      "tls_key",
-      "registry_config"
+      "tls_key"
     ]
   }
 }

@@ -1,5 +1,6 @@
 """Exercise the deployed proxy configuration with a real Nginx and a local auth stub."""
 import http.server
+import json
 from pathlib import Path
 import shutil
 import socket
@@ -15,7 +16,7 @@ import urllib.request
 @unittest.skipUnless(shutil.which("nginx"), "Requires the application's Nginx image")
 class ViewerProxyTest(unittest.TestCase):
     def test_identity_outage_is_retryable_without_forwarding_unauthorized_requests(self):
-        state = {"auth": 503, "forwarded": 0}
+        state = {"auth": 503, "forwarded": 0, "upstream": 200}
         class Handler(http.server.BaseHTTPRequestHandler):
             def log_message(self, *_args):
                 pass
@@ -26,7 +27,7 @@ class ViewerProxyTest(unittest.TestCase):
                     self.send_header("X-Gods-Eye-View-Role", "reader")
                 else:
                     state["forwarded"] += 1
-                    self.send_response(200)
+                    self.send_response(state["upstream"])
                 self.end_headers()
                 self.wfile.write(b'{"configured":true}')
         backend = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -36,19 +37,22 @@ class ViewerProxyTest(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                config = (Path(__file__).resolve().parents[5] / "docker/nginx.conf").read_text()
+                repository = Path(__file__).resolve().parents[5]
+                config = (repository / "docker/gateway.conf.template").read_text()
                 with socket.socket() as reservation:
                     reservation.bind(("127.0.0.1", 0))
                     port = reservation.getsockname()[1]
-                # TLS is outside this auth-subrequest check; all deployed locations remain intact.
-                config = config.replace("worker_processes auto;", "worker_processes 1;")
-                config = config.replace("pid /run/nginx.pid;", f"pid {root}/nginx.pid;")
-                config = config.replace("listen 80 default_server;", f"listen unix:{root}/http.sock default_server;")
-                config = config.replace("listen 443 ssl default_server;", f"listen 127.0.0.1:{port} default_server;")
+                # Exercise the actual deployed locations; TLS is outside this auth-subrequest check.
+                config = config.replace("${PUBLIC_HOST}", "viewer.test")
+                config = config.replace("listen 443 ssl;", f"listen 127.0.0.1:{port};")
                 config = "\n".join(line for line in config.splitlines() if "ssl_certificate" not in line)
-                config = config.replace("/var/log/nginx/access.log", "/dev/null").replace("/var/log/nginx/error.log", "/dev/null")
-                for upstream in (8000, 8081):
-                    config = config.replace(f"127.0.0.1:{upstream}", f"127.0.0.1:{backend.server_port}")
+                config = config.replace("/var/log/nginx/access.log", "/dev/null")
+                config = config.replace("/etc/nginx/viewer-headers.conf", str(repository / "docker/viewer-headers.conf"))
+                for upstream in ("api:8000", "viewer:8081"):
+                    config = config.replace(upstream, f"127.0.0.1:{backend.server_port}")
+                config = (f"worker_processes 1;\npid {root}/nginx.pid;\nerror_log stderr;\n"
+                    f"events {{ worker_connections 64; }}\nhttp {{ client_body_temp_path {root}/body; "
+                    f"proxy_temp_path {root}/proxy;\n{config}\n}}\n")
                 path = root / "nginx.conf"
                 path.write_text(config)
                 subprocess.run(["nginx", "-t", "-c", str(path)], check=True, capture_output=True)
@@ -63,7 +67,7 @@ class ViewerProxyTest(unittest.TestCase):
                         time.sleep(0.01)
                 for auth_status, expected in ((503, 503), (401, 401), (403, 403), (200, 200)):
                     state.update(auth=auth_status, forwarded=0)
-                    for route in ("/api/gods-eye-view/oci-provider", "/api/gods-eye-view/oci-voice"):
+                    for route in ("/api/setup/browser", "/api/opensky"):
                         try:
                             response = urllib.request.urlopen(f"http://127.0.0.1:{port}{route}", timeout=2)
                         except urllib.error.HTTPError as error:
@@ -73,8 +77,21 @@ class ViewerProxyTest(unittest.TestCase):
                             body = response.read()
                             if expected == 503:
                                 self.assertEqual(response.headers["Retry-After"], "2")
-                                self.assertIn(b"Viewer access could not be verified", body)
+                                self.assertEqual(response.headers.get_content_type(), "application/json")
+                                self.assertEqual(response.headers["Cache-Control"], "no-store")
+                                self.assertEqual(json.loads(body), {"detail": "Viewer access could not be verified"})
                     self.assertEqual(state["forwarded"], 2 if expected == 200 else 0)
+                state.update(auth=200)
+                for upstream_status in (401, 403, 500, 503):
+                    state.update(upstream=upstream_status, forwarded=0)
+                    for route in ("/api/setup/browser", "/api/opensky"):
+                        with self.assertRaises(urllib.error.HTTPError) as failure:
+                            urllib.request.urlopen(f"http://127.0.0.1:{port}{route}", timeout=2)
+                        with failure.exception as response:
+                            self.assertEqual(response.status, upstream_status)
+                            self.assertIsNone(response.headers.get("Retry-After"))
+                            self.assertNotIn(b"Viewer access could not be verified", response.read())
+                    self.assertEqual(state["forwarded"], 2)
         finally:
             if process is not None:
                 process.terminate()

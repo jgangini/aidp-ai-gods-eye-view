@@ -15,3 +15,5 @@ dist/
 .env.*
 .sentrux/baseline.json
 pytest-cache-files-*/
+candidate-assets/
+vm-bootstrap.zip

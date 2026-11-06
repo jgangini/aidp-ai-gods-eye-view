@@ -4,7 +4,7 @@ El coordinador posee instalación nativa, catálogo Deploy Studio y transición 
 
 La VM ejecuta gateway, API y visor mediante Compose. Solo se publica TLS 443. El administrador seleccionado en Deploy Studio es una identidad administrativa de la aplicación/AIDP; las peticiones OCI siguen firmadas por el operador autorizado. La administración de streaming/proveedores se abre dentro del visor; Deploy y Redeploy no aparecen en esa interfaz.
 
-`docker/bootstrap.sh start` exige digests de las tres imágenes y configuración preparada. Excluye activaciones concurrentes y guarda un recibo que vincula imágenes y `runtime.env`. Si falla la activación, restaura ambos del recibo anterior y conserva el puntero vigente. Datos, controles, checkpoints y caché no se borran. Hay prueba reproducible de fallo/rollback con comandos Docker simulados; no equivale a ensayo de actualización nativa.
+`docker/bootstrap.sh start` exige los IDs inmutables de las tres imágenes ya verificadas/cargadas y configuración preparada. Excluye activaciones concurrentes y guarda un recibo que vincula imágenes y `runtime.env`. Si falla la activación, restaura ambos del recibo anterior y conserva el puntero vigente. Datos, controles, checkpoints y caché no se borran. Hay prueba reproducible de fallo/rollback con comandos Docker simulados; no equivale a ensayo de actualización nativa.
 
 Ese rollback no revierte esquema Gold, IAM, claves OCI ni certificados TLS. La primera extracción conserva formatos y operador; rotaciones o cambios incompatibles requieren otra operación explícita, con snapshot y recuperación revisados. No reutilizar una imagen anterior con un esquema o identidad incompatibles.
 
