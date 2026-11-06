@@ -131,6 +131,6 @@
     "apps/backend/app/modules/ai_gods_eye_view/runtime/x.py": "0bd871f086fea7fe296aa0a42efdd8c06dd34c596a858094177dd9598cd69ead",
     "terraform/hooks/gods_eye_agent_source.py": "58b9e99bebcead85ba07282c318057d2b9e1aa14573d00f1b63dcf91fdc60d6e",
     "terraform/hooks/gods_eye_sources.py": "d9b845367d144dae227a0b1e5cbaedd77a45b12c7282e930acde2b1d0f6bd494",
-    "terraform/hooks/gods_eye_view_bootstrap.py": "f224b42fb1f3498b78e33900bb7b007c9c04409e355e2cd192e455727a965aec"
+    "terraform/hooks/gods_eye_view_bootstrap.py": "2c97eb313fc5513fef6952bce61ab8a46629c69b755849f218dd24a6bc9bc4dd"
   }
 }

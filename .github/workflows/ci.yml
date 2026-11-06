@@ -1,9 +1,9 @@
 name: Candidate checks
 on:
   push:
-    paths-ignore: ['docs/**', 'README.md']
+    paths-ignore: ['docs/**', 'README.md', 'modules/ai-gods-eye-view/README.md']
   pull_request:
-    paths-ignore: ['docs/**', 'README.md']
+    paths-ignore: ['docs/**', 'README.md', 'modules/ai-gods-eye-view/README.md']
   workflow_dispatch:
 permissions:
   contents: read

@@ -65,6 +65,9 @@ def consume(envelope, root, expected, *, finalize=True):
     document = json.loads(envelope)
     if set(document) != {"schema_version", "binding", "wrapped_key", "nonce", "ciphertext"} or document["schema_version"] != 1 or document["binding"] != expected:
         raise ValueError("Bootstrap envelope identity mismatch")
+    receipt = root / "bootstrap/receipt.json"
+    if receipt.exists() and json.loads(receipt.read_text(encoding="utf-8")) != expected:
+        raise ValueError("Operator rotation requires a separate authorized recovery operation")
     private = root / "bootstrap/private.pem"
     key = serialization.load_pem_private_key(private.read_bytes(), password=None)
     aad = json.dumps(expected, sort_keys=True).encode()
@@ -85,6 +88,11 @@ def consume(envelope, root, expected, *, finalize=True):
     from io import StringIO
     rendered = StringIO()
     config.write(rendered)
+    if receipt.exists():
+        for path, desired in (("oci/key.pem", payload["key"]), ("oci/config", rendered.getvalue()),
+                ("tls/fullchain.pem", payload["tls_certificate"]), ("tls/privkey.pem", payload["tls_key"])):
+            if (root / path).read_text(encoding="utf-8") != desired:
+                raise ValueError("Credential or TLS rotation requires a separate authorized recovery operation")
     for path, content in (("oci/key.pem", payload["key"]), ("oci/config", rendered.getvalue()),
         ("runtime.env", payload["runtime_env"]), ("tls/fullchain.pem", payload["tls_certificate"]), ("tls/privkey.pem", payload["tls_key"])):
         atomic(root / path, content.encode())

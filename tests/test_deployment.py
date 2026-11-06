@@ -45,6 +45,21 @@ def test_resume_rejects_a_changed_catalog_selection_before_any_request():
         catalog(SimpleNamespace(), journal, "other-key")
 
 
+def test_native_bootstrap_reuses_only_the_exact_catalog_already_verified_in_receipt():
+    journal = InstallationJournal(Store(), {"deployment_id": "one"}, clock=lambda: 10)
+    journal.record("catalog", "verified-catalog-key")
+    class Api:
+        installation_journal = journal
+        key = "verified-catalog-key"
+        def request(self, *_args, **_kwargs):
+            return SimpleNamespace(body={"items": [{"key": self.key, "displayName": "oci_medallion", "state": "ACTIVE"}]}, headers={})
+    api = Api()
+    assert native.named(api, "/catalogs", "oci_medallion")["key"] == "verified-catalog-key"
+    api.key = "different-key"
+    with pytest.raises(RuntimeError, match="no adoption"):
+        native.named(api, "/catalogs", "oci_medallion")
+
+
 def test_buckets_and_existing_workspace_fail_closed():
     inputs = {"identity_domain_id": "ocid1.domain.oc1..one", "admin_user_ocid": "ocid1.user.oc1..selected",
         "aidp_mode": "new", "medallion_bucket_names": {layer: layer for layer in ("landing", "bronze", "silver", "gold")},
@@ -81,6 +96,12 @@ def test_envelope_is_bound_authenticated_and_single_use(tmp_path):
     assert not (tmp_path / "bootstrap/private.pem").exists()
     with pytest.raises(FileNotFoundError):
         envelope.consume(encrypted, tmp_path, expected)
+    updated_public = envelope.generate_key(tmp_path / "bootstrap/private.pem")
+    changed = envelope.encrypt(updated_public, {**payload, "tls_key": "different-key"}, expected)
+    with pytest.raises(ValueError, match="separate authorized recovery"):
+        envelope.consume(changed, tmp_path, expected)
+    assert (tmp_path / "tls/privkey.pem").read_text() == "test-key"
+    assert (tmp_path / "bootstrap/private.pem").exists()
 
 
 class Store:

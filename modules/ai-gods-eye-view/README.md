@@ -1,70 +1,40 @@
-# God’s Eye View application
+# Aplicación God’s Eye View
 
-The deployed viewer boots the original God’s Eye View application: its globe,
-native controls, Data Layers catalog, scenes, provider integrations and voice UI.
-`native/` adds social network and sensor catalog layers, an evidence panel, two text
-assistants and OCI settings. It does not replace the native application shell.
-The previous standalone page in `src/main.js` is retained for compatibility and
-existing checks; it is not the native image's entry point.
+El visor desplegado inicia la aplicación original God’s Eye View: globo, controles nativos, catálogo **Data Layers**, escenas, integraciones de proveedores e interfaz de voz. `native/` añade capas de redes sociales y sensores al catálogo, un panel de evidencia, dos asistentes de texto y ajustes OCI, conservando la estructura de la aplicación nativa. La página standalone de `src/main.js` se conserva como fuente para revisión y pruebas; no es el punto de entrada de la imagen nativa ni un cliente anterior admitido.
 
-## Reproducible source and attribution
+## Fuente reproducible y atribución
 
-Upstream: [God’s Eye View by Bilawal Sidhu](https://github.com/bilawalsidhu/gods-eye-view),
-commit `aa16b7c3b0166a89d8c7a6089e0aff53a22faaee` (package version 0.2.1).
-The source archive SHA-256 is
-`a6020d0aa12a952585edee44a4765ab11f511e3f616927645d7ce04ce48487cb`.
-[`upstream.json`](upstream.json) is the authoritative pin, exclusion list and
-patch manifest. The archive and every patched source file must match their hashes;
-every replacement anchor must occur exactly once. A mismatch stops preparation.
+Fuente upstream: [God’s Eye View de Bilawal Sidhu](https://github.com/bilawalsidhu/gods-eye-view), commit `aa16b7c3b0166a89d8c7a6089e0aff53a22faaee` (versión del paquete 0.2.1). El SHA-256 del archivo fuente es `a6020d0aa12a952585edee44a4765ab11f511e3f616927645d7ce04ce48487cb`.
 
-[`prepare_upstream.py`](prepare_upstream.py) generates the ignored `.upstream/`
-directory from the archive. That generated tree is never vendored or committed,
-and the preparer refuses to overwrite a nonempty directory. Docker independently
-reproduces the tree; it does not depend on a developer's checkout.
+[`upstream.json`](upstream.json) es la fuente autoritativa del commit fijado, las exclusiones y el manifiesto de parches. El archivo descargado y cada archivo fuente que se parchea deben coincidir con sus hashes; cada ancla de sustitución debe aparecer exactamente una vez. Una discrepancia detiene la preparación.
 
-The nine hash-checked source patches are:
+[`prepare_upstream.py`](prepare_upstream.py) genera el directorio ignorado `.upstream/` a partir del archivo fuente. Ese árbol generado no se incorpora al repositorio como código vendorizado ni se registra en Git. El preparador rechaza un directorio de salida que ya contenga archivos. Docker reproduce el árbol de forma independiente, sin depender del checkout generado de un desarrollador.
 
-| Upstream file | Integration change |
+Los nueve parches de fuente verificados por hash son:
+
+| Archivo upstream | Cambio de integración |
 | --- | --- |
-| `src/data/localGeojsonCore.js` | Exposes native terrain/stem helpers reused by sensor layers. |
-| `src/main.js` | Delegates to `native/main.js`. |
-| `src/standalone/application.js` | Adds `extendCatalog(catalog, {scene, signal})` before registrations are sealed. |
-| `src/app/constructCatalog.js` | Removes the restricted Bhote Koshi event/locator registrations. |
-| `src/scenes/recipes.js` | Removes Nepal event recipes and their restricted data imports. |
-| `src/scenes/packs/defaults.js` | Removes the Nepal scene presentation adapter. |
-| `src/tools/index.js` | Removes the Bhote Koshi data query from the native tool registry. |
-| `src/ui/rightPanelRail.js` | Supports the expanded Agent Flow panel and shared voice-control boundary. |
-| `src/ui/leftPanelRail.js` | Keeps a minimum gap and respects the shared voice/HUD floor. |
+| `src/data/localGeojsonCore.js` | Expone helpers nativos de terreno y columnas reutilizados por las capas de sensores. |
+| `src/main.js` | Delega en `native/main.js`. |
+| `src/standalone/application.js` | Añade `extendCatalog(catalog, {scene, signal})` antes de cerrar los registros. |
+| `src/app/constructCatalog.js` | Retira los registros del evento y localizador Bhote Koshi sujetos a restricciones. |
+| `src/scenes/recipes.js` | Retira las recetas de eventos de Nepal y sus imports de datos restringidos. |
+| `src/scenes/packs/defaults.js` | Retira el adaptador de presentación de la escena de Nepal. |
+| `src/tools/index.js` | Retira la consulta de datos Bhote Koshi del registro de herramientas nativas. |
+| `src/ui/rightPanelRail.js` | Admite el panel Agent Flow expandido y el límite compartido con el control de voz. |
+| `src/ui/leftPanelRail.js` | Mantiene un espacio mínimo y respeta el límite inferior compartido de voz y HUD. |
 
-The upstream [MIT source license](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/LICENSE)
-and original notices remain in the generated tree and image. MIT covers source,
-not every bundled dataset or model. This distribution excludes TeleGeography's
-CC BY-NC-SA 3.0 cable dataset and the CC BY-NC 4.0 Bhote Koshi imagery and derived
-coordinates, including the dataset embedded in JavaScript. It also excludes
-upstream agent configuration, GitHub workflows and documentation media.
+La [licencia MIT del código upstream](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/LICENSE) y los avisos originales se conservan en el árbol generado y en la imagen. MIT cubre el código, pero no todos los datasets ni modelos incluidos. Esta distribución excluye el dataset de cables de TeleGeography bajo CC BY-NC-SA 3.0 y las imágenes y coordenadas derivadas de Bhote Koshi bajo CC BY-NC 4.0, incluido el dataset incrustado en JavaScript. También excluye la configuración de agentes, los workflows de GitHub y los medios de documentación upstream.
 
-Other native layers and their controls remain present. Excluding the cable
-dataset does not provide replacement cable data; that layer is unavailable
-without an appropriately licensed source. Provider coverage, credentials,
-quotas and availability still determine which live layers work in Bogotá.
-Do not present another city's cameras as Bogotá feeds.
+Las demás capas nativas y sus controles permanecen disponibles. Excluir el dataset de cables no proporciona datos de reemplazo; esa capa no dispone de datos sin una fuente con licencia adecuada. La cobertura, credenciales, cuotas y disponibilidad de los proveedores determinan qué capas en vivo funcionan en Bogotá. No presentar cámaras de otra ciudad como transmisiones de Bogotá.
 
-Retained source/provider attribution is documented in upstream
-[`DATA_SOURCES.md`](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/DATA_SOURCES.md).
-OpenStreetMap-derived datasets retain their ODbL obligations. Retained 3D models
-keep their authors, source links, CC BY 4.0 licenses and modification notices in
-[`public/models/README.md`](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/public/models/README.md).
-Provider terms apply independently of the source license. Keep those notices
-when redistributing the image or public assets.
+La atribución de fuentes y proveedores conservados está documentada en [`DATA_SOURCES.md` upstream](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/DATA_SOURCES.md). Los datasets derivados de OpenStreetMap conservan sus obligaciones ODbL. Los modelos 3D conservados mantienen autores, enlaces de origen, licencias CC BY 4.0 y avisos de modificación en [`public/models/README.md` upstream](https://github.com/bilawalsidhu/gods-eye-view/blob/aa16b7c3b0166a89d8c7a6089e0aff53a22faaee/public/models/README.md). Los términos de cada proveedor se aplican independientemente de la licencia del código. Conservar estos avisos al redistribuir la imagen o los assets públicos.
 
-The small, previously pinned MIT session module in `vendor/gods-eye-view/` is
-still used by the tested AIDP JSON adapter. Its provenance/allowlist is separate
-from the full native source pin; the viewer tests verify it.
+El pequeño módulo de sesión MIT fijado previamente en `vendor/gods-eye-view/` sigue siendo utilizado por el adaptador JSON AIDP probado. Su procedencia y lista de archivos permitidos son distintas del commit fijado para la fuente nativa completa; las pruebas del visor los verifican.
 
-## Build and upstream updates
+## Build y actualizaciones upstream
 
-The native image uses Node 24.14.0. It does not change the administration build's
-Node version. From the repository root:
+La imagen nativa usa Node 24.14.0. Su proceso de build es independiente del build de los controles de administración. Desde la raíz del repositorio:
 
 ```sh
 python modules/ai-gods-eye-view/prepare_upstream.py --output modules/ai-gods-eye-view/.upstream
@@ -74,200 +44,82 @@ node --test modules/ai-gods-eye-view/tests/*.test.mjs
 docker build -f modules/ai-gods-eye-view/Dockerfile -t gods-eye-view:dev .
 ```
 
-Preparation requires a missing or empty output directory. `--archive` accepts a
-previously downloaded archive but performs the same checksum validation. The
-root viewer's old `npm run build` builds the retained standalone page; use the
-native command or Docker for the deployed native application.
+La preparación exige un directorio de salida inexistente o vacío. `--archive` acepta un archivo descargado previamente y aplica la misma validación del checksum. `npm run build` en el directorio raíz del visor construye la página standalone conservada para revisión y pruebas; el build de la aplicación desplegada utiliza el comando nativo o Docker.
 
-For an upstream update, review the desired immutable commit and its licenses,
-calculate the archive and all original patched-file hashes, and review each patch against
-that source before updating `upstream.json`. Materialize into a new empty
-directory; never edit generated files to make a failing patch pass. Run the
-preparer tests, viewer tests, native build, Docker health checks and authenticated
-DOM/provider checks. Review new provider routes against the fixed proxy allowlist.
-Only then publish the product's immutable release through its verified release
-process. An upstream hash or anchor mismatch must fail closed.
+Para actualizar upstream, revisar el commit inmutable deseado y sus licencias, calcular los hashes del archivo fuente y de los archivos originales que se parchean, y revisar cada parche contra esa fuente antes de actualizar `upstream.json`. Materializar el resultado en un directorio vacío nuevo; no editar archivos generados para conseguir que pase un parche que falla. Ejecutar las pruebas del preparador y del visor, el build nativo, las comprobaciones de salud Docker y las verificaciones autenticadas de DOM/proveedores. Contrastar las nuevas rutas de proveedores con la lista fija permitida por el proxy. Una discrepancia de hash o ancla debe bloquear el proceso. La publicación posterior de una release inmutable exige su flujo verificado y autorización; esta guía no acredita que ya se haya publicado ni desplegado.
 
-The frozen upstream dependency tree currently reports eight npm advisories
-(seven high and one critical in the network-backed audit on 2026-11-05), including
-DOMPurify, Vite and sharp. The pin is preserved; do not run `npm audit fix` against
-the generated tree. Review applicability and select an upstream revision or
-explicit hash-checked dependency patch, regenerate its lock deterministically,
-and rerun native/proxy/build checks before publication. Local test/build success
-does not close that dependency-security gate.
+### Auditoría de dependencias y alcance
 
-The critical [DOMPurify advisory GHSA-cg2g-xh64-v4q7](https://github.com/cure53/DOMPurify/security/advisories/GHSA-cg2g-xh64-v4q7)
-requires template-safe mode together with DOM-returning mode, a caller-supplied
-DOM node with an attached shadow root, and subsequent template evaluation. The
-installed `@cesium/engine/Source/Core/Credit.js` is the only DOMPurify consumer
-in the native product source/dependency code inspected: its constructor requires
-a string and line 94 calls `sanitize(this._html)` with default configuration.
-The product sets no DOMPurify hooks/configuration. Those prerequisites are absent
-from this credit path; `tests/sanitizer-boundary.test.mjs` exercises the actual
-Credit implementation and rejects DOM-node input. This is a scoped applicability
-finding, not a claim that the dependency audit is clean or that future consumers
-are safe. A reviewed upgrade to DOMPurify 3.4.17 or later remains the remediation
-route when changing the upstream dependency contract.
+El árbol upstream fijado produjo ocho avisos npm en la auditoría con acceso a red del 2026-11-05: siete altos y uno crítico, incluidos DOMPurify, Vite y sharp. Se conserva el pin; no ejecutar `npm audit fix` sobre el árbol generado. Para corregir una dependencia, revisar su aplicabilidad, seleccionar una revisión upstream o un parche explícito verificado por hash, regenerar el lock de forma determinista y repetir las comprobaciones nativas, de proxy y build antes de publicar. Pasar pruebas y builds locales no cierra por sí solo ese gate de seguridad.
 
-## Runtime boundary and providers
+El [aviso crítico DOMPurify GHSA-cg2g-xh64-v4q7](https://github.com/cure53/DOMPurify/security/advisories/GHSA-cg2g-xh64-v4q7) requiere `SAFE_FOR_TEMPLATES`, un modo que devuelva DOM, un nodo DOM aportado por el llamador con un shadow root adjunto y posterior evaluación de plantillas. `@cesium/engine/Source/Core/Credit.js` es el único consumidor DOMPurify encontrado en el código nativo y las dependencias inspeccionadas: su constructor exige un string y la línea 94 llama `sanitize(this._html)` con configuración predeterminada. El producto no establece hooks ni configuración DOMPurify. Esos prerrequisitos están ausentes en esta ruta de créditos; `tests/sanitizer-boundary.test.mjs` ejercita la implementación real de `Credit` y rechaza entrada de nodos DOM. Es una conclusión acotada de aplicabilidad; no declara limpia la auditoría ni garantiza usos futuros. Una actualización revisada a DOMPurify 3.4.17 o posterior sigue siendo la vía de corrección al cambiar el contrato de dependencias upstream.
 
-The product runs its own API, viewer and TLS gateway on one VM. The gateway is
-the only public listener (443); API 8000 and viewer 8081 have no host port mapping.
-Node remains on container loopback 4173. No Starter Kits portal is required.
-The release build verifies the upstream archive and patches, builds/tests the
-native application, and publishes an immutable image with its manifest and digest.
-Product bootstrap verifies and installs that image; it does not download a moving
-upstream branch or rebuild the viewer. Updates retain the same release checks.
+La revisión de los siete avisos altos distinguió el uso efectivo de la presencia de un paquete en la imagen:
 
-The viewer supervises the original Node provider/preview runtime on
-`127.0.0.1:4173` and the Python authentication bridge on port 8081.
-The Node listener is private. The gateway serves `/gods-eye-view/`, checks the
-API's current OIDC session and forwards only approved native API prefixes.
-The Python bridge independently revalidates the cookie with
-`/api/gods-eye-view/session` and replaces browser-supplied identity headers.
-`GODS_EYE_VIEW_ADMIN_URL` targets the product API (`http://api:8000` in Compose),
-not a central portal. Provider administration returns to that API's admin session
-check; no public route exposes `/internal/`.
-The bridge uses a fixed local destination, validates the public origin, and
-does not forward session cookies or OCI credentials to native providers.
-It is not an arbitrary URL proxy. Never expose either backend listener directly
-to the internet.
+| Dependencia fijada | Ruta y alcance observados | Fuente del aviso |
+| --- | --- | --- |
+| `puppeteer` 25.10.0 | Scripts QA; hereda el aviso a través de `puppeteer-core` y `chromium-bidi`. No se identificó un llamador productivo. | Cadena de dependencias de `npm audit`; aviso Zod enlazado abajo. |
+| `puppeteer-core` 25.10.0 | Parte de la misma cadena QA. No se identificó una ruta pública que la ejecute. | Cadena de dependencias de `npm audit`; aviso Zod. |
+| `chromium-bidi` 17.0.2 | Utilizado por Puppeteer; hereda el aviso Zod. No se identificó una ruta pública que lo ejecute. | Cadena de dependencias de `npm audit`; aviso Zod. |
+| `zod` 3.25.76 | Validación de colecciones en la cadena QA anterior. No se encontró un consumidor de producción en la revisión. | [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). |
+| `sharp` 0.35.4 | Scripts QA y tests de iconos SVG; no se encontró un import en providers/runtime. El procesamiento de imágenes no confiables en esas herramientas requiere revisión. | [GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w), dependencia librsvg. |
+| `source-map-js` 1.2.1 | PostCSS lee/genera sourcemaps durante el build. No se identificó transformación de sourcemaps aportados por HTTP en el runtime. | [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q). |
+| `vite` 6.4.3 | Se utiliza en producción mediante `preview()`. Los avisos revisados corresponden al editor/dev server, transformación HTML de desarrollo o middleware de acceso al filesystem de desarrollo, no observados en el flujo preview. El aviso alto de editor exige Windows; la imagen productiva es Linux. | [Editor](https://github.com/advisories/GHSA-587h-7wmj-h5pm), [filesystem](https://github.com/advisories/GHSA-rq7h-c2jc-7f22), [HTML](https://github.com/advisories/GHSA-9jrq-w75r-8gcw). |
 
-Authorized administrators open **Source controls** inside the native viewer.
-Its same-origin dialog embeds `/controls/`, reusing the social/sensor schedules,
-capture, evidence, cleanup, provider parameters and viewer-identity components.
-The gateway and API both reject readers from administration; hiding the button
-is not the permission check. Closing the dialog does not cancel durable cleanup.
-The extracted editable controls and their frozen source hashes are in
-`apps/frontend/provenance.json`; their build uses `npm run build --prefix apps/frontend`.
-`docker/Gateway.Dockerfile` embeds those static assets, and `docker/compose.yml`
-defines the private service network. Bootstrap consumes preinstalled TLS,
-runtime bindings and OCI credentials; release coordinates require SHA-256 image
-digests. Failed activation restores the prior image coordinates when available,
-without resetting API state or the provider cache. Native workflow publication
-and agent acceptance remain separate from container readiness.
+La evidencia de rutas incluye `native/runtime.mjs:7–20`, los imports QA de `scripts/qa-admin-outlines.mjs:30–31`, PostCSS `lib/input.js:5` y la implementación instalada de Vite `dep-Dm0c1Wj2.js`: `preview()` en la línea 48370, frente al registro de editor/raw-files del servidor de desarrollo en 38838–38850. Estos paths pertenecen al árbol generado fijado. Los siete avisos altos no son necesariamente siete vulnerabilidades independientes: cuatro corresponden a la misma cadena Puppeteer/Zod. No se confirmó exposición productiva en esta revisión; los paquetes afectados siguen presentes en la imagen y deben reevaluarse si cambia su uso. No se amplió el alcance a una actualización general de dependencias.
 
-The native key writer and MCP transport are not enabled in this deployment.
-Native `/api/setup/status` supplies provider availability; provider keys are
-managed in the server environment. Missing keys remain visibly unconfigured.
-OCI settings use authenticated administration endpoints: region and credentials
-are read-only, and model choices come from the actual available OCI catalog.
-No browser form accepts an OCI private key, database password or endpoint
-override. Before starting the globe, authenticated `/api/setup/browser` returns
-exactly `googleApiKey` and `cesiumToken` from the running server configuration.
-Empty strings explicitly select keyless operation. A failed or malformed response
-stops startup with an error; it does not silently assume credentials exist.
-These two upstream-designated browser credentials are intentionally client-visible
-and must use provider domain/API restrictions and minimum scopes. They are loaded
-at runtime, so changing them does not require an image rebuild. No broader
-environment projection is allowed. OCI, social-network and other private server
-credentials remain exclusively server-side.
+## Límite de ejecución, entrega de imágenes y proveedores
 
-The globe can start with keyless sources. Optional Google photorealistic tiles,
-Cesium services, native voice and other feeds require their respective provider
-keys and access. Retaining a native control is not proof that its provider is
-configured or geographically available.
+El producto independiente ejecuta su propia API, visor y gateway TLS en una VM. El gateway es el único listener público, en 443; API 8000 y visor 8081 no publican puertos del host. Node permanece en loopback del contenedor, puerto 4173. No requiere el portal Starter Kits ni ofrece una segunda interfaz de instalación.
 
-## Assistant paths and voice providers
+El proceso de build verifica el archivo upstream y sus parches y construye/prueba la aplicación nativa. El candidato tiene tres imágenes: API, visor y gateway. El empaquetador local `scripts/release/package_candidate.py` prepara un archivo `*-image-amd64.tar.gz` y un manifiesto `*-release.json` por componente, con commit, repositorio, plataforma `linux/amd64`, ID de contenido y SHA-256 real del archivo comprimido. No construye, descarga ni publica imágenes al empaquetar. CI entrega estos seis assets como artifacts privados con `release=candidate`; no publica una release final.
 
-| Interface | Contract and scope |
+La [entrega privada](../../docs/contracts.md) está aislada y probada como componente. `scripts/deployment/image_assets.py` puede autenticar, verificar tag/commit/repositorio/manifiestos y subir los archivos condicionalmente al bucket artifacts. El handoff del control plane hacia el runner sigue pendiente de la decisión de visibilidad. Los hooks activos no piden ni suponen `GH_TOKEN`/`GITHUB_TOKEN`; CloudTechNext filtra ese entorno. Para un repositorio privado, el control plane debe efectuar la descarga autenticada y entregar una referencia protegida de assets ya verificados al runner. Ese contrato genérico aún no está implementado aquí; el hook rechaza la falta de entrega autorizada. La alternativa de descarga HTTPS anónima exigiría una decisión explícita de repositorio público y los mismos pins/hashes. No se cambió la visibilidad ni se aprobó esa alternativa.
+
+El consumidor VM lee los tres objetos exactos mediante instance principal, verifica el SHA-256 antes de `docker load` y comprueba después el ID de contenido y la plataforma. Compose usa los IDs locales `sha256:...` en `API_IMAGE`, `VIEWER_IMAGE` y `GATEWAY_IMAGE`, con `pull_policy: never`. La VM no necesita tokens privados GitHub ni credenciales de registro. Su IAM se limita a los objetos de release y bootstrap autorizados. El arranque no clona una rama mutable ni recompila upstream. La aceptación nativa exige resolver el handoff y disponer de una release estable inmutable con los seis assets exactos; `candidate` no satisface ese gate y se rechaza. Las pruebas del descargador y del cargador no acreditan esa integración pendiente.
+
+El visor supervisa el runtime original Node de proveedores/preview en `127.0.0.1:4173` y el bridge Python autenticado en 8081. El gateway sirve `/gods-eye-view/`, comprueba la sesión OIDC vigente con la API y solo reenvía los prefijos de API nativa permitidos. El bridge revalida de forma independiente la cookie en `/api/gods-eye-view/session` y sustituye los headers de identidad aportados por el navegador. `GODS_EYE_VIEW_ADMIN_URL` apunta a la API del producto (`http://api:8000` en Compose). La administración de proveedores vuelve a comprobar la sesión administradora en esa API; ninguna ruta pública expone `/internal/`. El bridge usa un destino local fijo, valida el origen público y no reenvía cookies de sesión ni credenciales OCI a los proveedores nativos. No es un proxy de URL arbitraria. No exponer directamente ninguno de los listeners de backend a Internet.
+
+Los administradores autorizados abren **Source controls** dentro del visor nativo. Su diálogo del mismo origen incorpora `/controls/`, reutilizando componentes de horarios social/sensores, captura, evidencia, limpieza, parámetros de proveedores e identidad del visor. Gateway y API rechazan a los lectores en administración; ocultar el botón no es el control de permisos. Cerrar el diálogo no cancela una limpieza durable. Los controles editables extraídos y los hashes de su fuente congelada están en `apps/frontend/provenance.json`; su build usa `npm run build --prefix apps/frontend`. `docker/Gateway.Dockerfile` incorpora esos assets estáticos y `docker/compose.yml` define la red privada de servicios.
+
+El bootstrap consume TLS, configuración y credenciales OCI preparados por el canal cifrado descrito en los contratos. Exige las tres imágenes verificadas y ya cargadas por ID local inmutable. Si falla la activación y existe un recibo anterior, restaura sus imágenes y `runtime.env` y conserva el puntero vigente, sin reiniciar el estado de la API ni borrar la caché de proveedores. Ese rollback no revierte esquema Gold, IAM, claves OCI ni certificados TLS; una rotación o cambio incompatible requiere otra operación explícita. La publicación de workflows y la aceptación del agente siguen siendo independientes de la salud de los contenedores. Consultar [operación y recuperación](../../docs/operations.md).
+
+El escritor nativo de claves y el transporte MCP no están habilitados en este despliegue. `/api/setup/status` presenta la disponibilidad de proveedores; las claves se administran en el entorno del servidor. Su ausencia permanece visible como falta de configuración. Los ajustes OCI utilizan endpoints de administración autenticados: región y credenciales son de solo lectura, y las opciones de modelo proceden del catálogo OCI disponible. Ningún formulario del navegador acepta una clave privada OCI, contraseña de base de datos ni cambio del endpoint.
+
+Antes de iniciar el globo, `/api/setup/browser`, autenticado, devuelve exactamente `googleApiKey` y `cesiumToken` de la configuración del servidor en ejecución. Strings vacíos seleccionan explícitamente el funcionamiento sin claves. Una respuesta fallida o malformada detiene el arranque con un error, sin asumir que existen credenciales. Estas dos credenciales designadas por upstream para navegador son deliberadamente visibles al cliente y deben restringirse por dominio/API del proveedor y con ámbitos mínimos. Se cargan durante la ejecución; cambiarlas no exige reconstruir la imagen. No se permite proyectar el resto del entorno. Las credenciales OCI, de redes sociales y demás secretos del servidor permanecen exclusivamente en el servidor.
+
+El globo puede iniciar con fuentes sin claves. Los tiles fotorrealistas de Google, servicios Cesium, voz nativa y otros feeds opcionales requieren sus claves y accesos respectivos. Conservar un control nativo no demuestra que su proveedor esté configurado ni que tenga cobertura geográfica.
+
+## Rutas de asistentes y proveedores de voz
+
+| Interfaz | Contrato y alcance |
 | --- | --- |
-| Agent Flow | `/api/gods-eye-view/chat`: one AIDP conversation with a versioned snapshot, current filters/selection, evidence references and explicit map-action buttons. Final JSON, not OpenAI Realtime or SSE. |
-| OpenAI voice | Original upstream OpenAI Realtime integration and native tools, using the server OpenAI key. |
-| OCI voice | An adapter for the native voice control. A bounded WAV turn goes to an audio-capable OCI conversational model; `xai.grok-tts` generates the spoken response. This is turn-based audio, not OpenAI WebRTC or full-duplex streaming. |
+| Agent Flow | `/api/gods-eye-view/chat`: una conversación AIDP con snapshot versionado, filtros/selección actuales, referencias de evidencia y botones explícitos de acciones del mapa. Respuesta JSON final; no utiliza OpenAI Realtime ni SSE. |
+| Voz OpenAI | Integración OpenAI Realtime original upstream y herramientas nativas, con la clave OpenAI del servidor. |
+| Voz OCI | Adaptador para el control de voz nativo. Un turno WAV acotado se envía a un modelo conversacional OCI con entrada de audio; `xai.grok-tts` genera la respuesta hablada. Es audio por turnos; no implementa OpenAI WebRTC ni streaming full-duplex. |
 
-**Power up the globe** shows read-only provider status. Deployment supplies the
-OCI models and credentials; a fresh browser automatically uses configured OCI
-voice. Existing explicit browser preferences are preserved. Only one microphone
-controller is installed. The OCI card uses the native provider indicator:
-green means server credentials and a model are configured. Its last
-inference result remains separate; a quota error does not erase configuration.
-Friendly catalog names are displayed instead of model OCIDs.
+**Power up the globe** muestra el estado de los proveedores en modo de solo lectura. El despliegue aporta modelos y credenciales OCI; un navegador nuevo usa automáticamente la voz OCI configurada. Se conservan las preferencias explícitas existentes del navegador. Solo se instala un controlador de micrófono. La tarjeta OCI usa el indicador nativo del proveedor: verde significa que existen credenciales de servidor y un modelo configurado. El resultado de la última inferencia se mantiene separado; un error de cuota no borra la configuración. Se muestran los nombres legibles del catálogo en lugar de los OCID de modelos.
 
-With `GODS_EYE_VIEW_ENABLED=true`, a new deployment defaults to `xai.grok-4.6`
-for text and `google.gemini-2.5-flash-lite` with voice `ara` for audio turns.
-The administrator can override these through `GODS_EYE_OCI_TEXT_MODEL`,
-`GODS_EYE_OCI_VOICE_MODEL` and `GODS_EYE_OCI_VOICE` in the VM environment.
-Persisted selections take precedence. These defaults reuse the existing operator,
-region and compartment and do not run inference or claim availability at startup.
+Con `GODS_EYE_VIEW_ENABLED=true`, los valores iniciales de un despliegue nuevo son `xai.grok-4.6` para texto y `google.gemini-2.5-flash-lite`, con voz `ara`, para los turnos de audio. El administrador puede cambiarlos mediante `GODS_EYE_OCI_TEXT_MODEL`, `GODS_EYE_OCI_VOICE_MODEL` y `GODS_EYE_OCI_VOICE` en el entorno de la VM. Las selecciones persistidas tienen prioridad. Estos valores reutilizan el operador, región y compartimento existentes; no ejecutan inferencia ni acreditan disponibilidad al arrancar.
 
-When the OCI catalog returns `xai.grok-voice-agent`, the administrative API reports
-it as **Realtime connection not verified**. The catalog advertises audio and
-realtime capabilities, but this adapter does not yet implement a verified OCI
-realtime session for that model. It remains disabled rather than being routed
-through Gemini or TTS under a Grok Voice Agent label. Catalog availability,
-saved configuration and successful voice inference are separate checks.
+Cuando el catálogo OCI devuelve `xai.grok-voice-agent`, la API administrativa lo presenta como **Realtime connection not verified**. El catálogo anuncia capacidades de audio y realtime, pero el adaptador todavía no implementa una sesión realtime OCI verificada para ese modelo. La opción permanece deshabilitada, sin dirigirla a Gemini o TTS bajo una etiqueta Grok Voice Agent. Disponibilidad en catálogo, configuración guardada e inferencia de voz correcta son comprobaciones distintas.
 
-OCI voice uses the existing server operator and compartment. Neither PEM material
-nor signing credentials reach the browser. The audio endpoints accept bounded PCM
-WAV recordings up to 30 seconds; general API body limits remain unchanged. A voice
-turn may propose only supported camera actions and data-layer visibility changes,
-including Social networks. The client validates and executes these requests; the
-voice reply does not confirm execution. It cannot execute code, choose a backend
-URL, or confirm an incident. Published evidence remains in Agent Flow.
-Cancelling stops microphone tracks and playback and discards late responses. Audio
-is processed for the turn without persisting microphone recordings in the app.
+La voz OCI usa el operador y compartimento existentes del servidor. Ni el material PEM ni las credenciales de firma llegan al navegador. Los endpoints de audio aceptan grabaciones WAV PCM acotadas a 30 segundos; se mantienen los límites generales de cuerpos de petición de la API. Un turno de voz solo puede proponer acciones de cámara admitidas y cambios de visibilidad de capas, incluida **Social networks**. El cliente valida y ejecuta esas solicitudes; la respuesta de voz no confirma su ejecución. No puede ejecutar código, elegir una URL de backend ni confirmar un incidente. La evidencia publicada permanece en Agent Flow. Cancelar detiene las pistas del micrófono y la reproducción y descarta respuestas tardías. El audio se procesa para ese turno sin persistir grabaciones del micrófono en la aplicación.
 
-The native ON/OFF control starts automatic audio turns: speech followed by a
-900 ms pause sends the recording; playback finishes before listening resumes.
-Silence-only 30-second windows recycle locally without inference. The amplitude
-detector requires 250 ms above its threshold and can mistake sustained noise for
-speech; validate microphone levels in the demonstration room. This is not
-full-duplex realtime voice. OFF or any provider error stops the conversation.
-Microphone acceptance must check permission, a spoken utterance, the resulting
-response, and stopped input tracks. Test-file upload controls are not in the UI.
-Keep that result separate from unit tests or a successful text-to-speech call.
-The model contracts are documented by Oracle for
-[Gemini audio input](https://docs.oracle.com/en-us/iaas/Content/generative-ai/google-gemini-2-5-flash.htm)
-and [xAI speech output](https://docs.oracle.com/en-us/iaas/Content/generative-ai/xai-grok-tts.htm).
+El control nativo **ON/OFF** inicia turnos automáticos de audio: después de hablar, una pausa de 900 ms envía la grabación; la reproducción termina antes de volver a escuchar. Las ventanas de 30 segundos de solo silencio se reciclan localmente sin inferencia. El detector de amplitud exige 250 ms por encima de su umbral y puede confundir ruido sostenido con voz; validar los niveles del micrófono en la sala de demostración. No es voz realtime full-duplex. **OFF** o cualquier error del proveedor detiene la conversación. La aceptación del micrófono debe comprobar permiso, una frase hablada, la respuesta obtenida y la detención de las pistas de entrada. La UI no incluye controles para cargar archivos de prueba. Mantener esa aceptación separada de los tests unitarios o de una llamada correcta de texto a voz. Oracle documenta los contratos de [entrada de audio Gemini](https://docs.oracle.com/en-us/iaas/Content/generative-ai/google-gemini-2-5-flash.htm) y [salida de voz xAI](https://docs.oracle.com/en-us/iaas/Content/generative-ai/xai-grok-tts.htm).
 
-Agent Flow is a single AIDP conversation in the native right rail below Context.
-Enter sends a question; Shift+Enter inserts a newline. The header's New conversation
-button resets its history and counter. Cancel aborts a pending request and discards
-a late response. An AIDP 409 preserves the question and refreshes the publication for
-manual retry. Evidence and map-action buttons refuse to apply an answer from an
-older publication. Model output is rendered as text, never executed as HTML/code.
-The expanded panel respects Data Layers' height ceiling; the conversation scrolls
-inside it while the composer remains visible.
+Agent Flow es una sola conversación AIDP en el panel derecho nativo, debajo de **Context**. **Enter** envía una pregunta; **Shift+Enter** inserta una línea nueva. El botón **New conversation** de la cabecera reinicia el historial y contador. **Cancel** aborta una petición pendiente y descarta su respuesta tardía. Un `409` AIDP conserva la pregunta y actualiza la publicación para un reintento manual. Los botones de evidencia y acciones del mapa rechazan aplicar una respuesta de una publicación anterior. El resultado del modelo se representa como texto y nunca se ejecuta como HTML/código. El panel expandido respeta el límite de altura de **Data Layers**; la conversación se desplaza en su interior y el campo de escritura permanece visible.
 
-`GODS_EYE_VIEW_MODE=oci` selects the real runtime independently of local development
-identity. Configure it on both the backend and viewer, with the existing operator
-profile and the configured module runtime on the backend. New module controls use
-Object Storage, and analytical queries use AIDP Gold; Autonomous is not a
-prerequisite for these paths. Existing deployments require the separate
-[migration gates](../../docs/operations.md#migrate-gods-eye-view-controls).
-An explicit
-`GODS_EYE_VIEW_ADMIN_URL` makes the viewer obtain the authenticated backend's publication;
-OCI mode rejects a fixture publication. Without that URL, the deployed viewer
-continues reading Gold with its instance principal. Backend-proxy `/ready` checks
-the native viewer only and reports `publication_check=authenticated_backend_request`;
-module activation checks the backend deployment and snapshot separately.
-Local identity with OCI mode does not start a second capture producer: the
-deployed VM owns capture. Missing credentials or AIDP failures never select a
-fixture answer. Omitting the override retains the existing development defaults.
+`GODS_EYE_VIEW_MODE=oci` selecciona el runtime real. Configurarlo tanto en API como en visor, con el perfil del operador existente y los bindings AIDP del producto en el backend. Los controles utilizan Object Storage y las consultas analíticas utilizan AIDP Gold; Autonomous no es un prerrequisito de estas rutas. La independencia del repositorio no adopta ni migra automáticamente instalaciones anteriores; sus decisiones de transición corresponden al coordinador y a los contratos de operación.
 
-The God’s Eye View layer uses one native `CustomDataSource`. Capture-status polling
-follows the server schedule and refreshes completed publication revisions.
-Disabling the layer stops its refresh; other layers remain intact. A fresh URL seeds a native Bogotá camera share state
-before startup; an existing hash is preserved. No delayed or recurring local
-camera override competes with native navigation or user-shared views.
-Inclusive social periods use the linked publication's creation time;
-sensor periods are explicit filters on `observed_at`. Last-known sensor readings
-do not inherit the social feed's default 24-hour window. Map-area filters carry
-the same bounds to AIDP. Events without
-coordinates remain in the list unless a geographic area excludes them.
-Activity, severity, confidence, corroboration and human confirmation are distinct.
-Evidence preserves real/synthetic provenance. Only allowed real X photos whose
-evidence IDs were included in the current human review can be displayed.
+`GODS_EYE_VIEW_ADMIN_URL` es obligatoria para obtener la publicación del backend autenticado en modo OCI. Si falta, el visor devuelve error; no selecciona una publicación fixture ni un lector alternativo. El modo OCI rechaza una publicación que no proceda del runtime AIDP. `/ready` del bridge comprueba el visor nativo y declara `publication_check=authenticated_backend_request`; la comprobación del backend y del snapshot es separada. La VM desplegada es la propietaria de captura; las comprobaciones locales no deben iniciar un segundo productor. Ni la ausencia de credenciales ni los fallos AIDP autorizan respuestas fixture. Los fixtures de desarrollo/pruebas permanecen identificados y no constituyen una pantalla de login local.
 
-## Acceptance limits
+La capa God’s Eye View utiliza un solo `CustomDataSource` nativo. El sondeo de estado de captura sigue el horario del servidor y actualiza revisiones de publicación completadas. Desactivar la capa detiene su actualización y mantiene las demás capas. Una URL nueva inicializa un estado compartible de cámara de Bogotá antes del arranque; si ya existe un hash de navegación, lo conserva. No hay una corrección de cámara local diferida o periódica que compita con la navegación nativa o las vistas compartidas por usuarios.
 
-Local fixture answers are explicitly identified and do not invoke an AIDP model.
-Validate the installed revision's native workflows, Gold/Object publication,
-agent conversation and evidence agreement independently. A successful direct OCI
-inference does not establish the AIDP agent path, and a candidate conversation
-does not switch the active pointer. Unit tests and container health do not
-certify live voice, model inference or third-party feed availability. Keep run
-identifiers and temporary diagnostics private; use the
-[module acceptance guide](../../docs/modules/ai-gods-eye-view.md#security-and-acceptance)
-for the stable deployment checks.
+Los periodos sociales inclusivos usan la fecha de creación de la publicación vinculada; los periodos de sensores son filtros explícitos sobre `observed_at`. Las últimas lecturas conocidas de sensores no heredan la ventana social predeterminada de 24 horas. Los filtros de área envían los mismos límites a AIDP. Los eventos sin coordenadas permanecen en la lista salvo que un área geográfica los excluya. Actividad, gravedad, confianza, corroboración y confirmación humana son conceptos distintos. La evidencia conserva su procedencia real o sintética. Solo se pueden mostrar fotos reales de X permitidas cuyos IDs de evidencia estuvieran incluidos en la revisión humana actual.
+
+## Límites de aceptación
+
+Las respuestas fixture locales están identificadas explícitamente y no invocan un modelo AIDP. Validar por separado los workflows nativos de la revisión instalada, la publicación Gold/Object, la conversación del agente y su concordancia con la evidencia. Una inferencia OCI directa correcta no acredita la ruta del agente AIDP, y una conversación del candidato no cambia el puntero activo. Los tests unitarios y la salud de contenedores no certifican voz en vivo, inferencia de modelos ni disponibilidad de feeds externos.
+
+La entrega autenticada aislada y el cargador VM cuentan con pruebas de componente; el handoff del control plane y la decisión de visibilidad siguen pendientes. No presentar esos tests, los artifacts privados `candidate` ni un build correcto como aceptación de instalación privada o como release estable. No se ejecuta una publicación o una operación cloud al seguir esta documentación. Mantener privados los identificadores de ejecución y diagnósticos temporales. Los [contratos del candidato](../../docs/contracts.md), la [operación](../../docs/operations.md) y la [validación de desarrollo](../../docs/development.md) establecen los gates y sus límites vigentes.

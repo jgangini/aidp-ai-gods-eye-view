@@ -71,7 +71,8 @@ def named(api, path, name, params=None):
     if matches:
         journal = getattr(api, "installation_journal", None)
         if journal:
-            expected = journal.state["resources"].get("native:" + path + ":" + name)
+            resource_key = "catalog" if path == "/catalogs" and name == "oci_medallion" else "native:" + path + ":" + name
+            expected = journal.state["resources"].get(resource_key)
             if not expected or matches[0].get("key") != expected:
                 raise RuntimeError("Native resource exists without this installation's exact identity receipt; no adoption was performed")
         return matches[0]
