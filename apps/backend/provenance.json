@@ -1,0 +1,35 @@
+{
+  "source_repository": "https://github.com/jgangini/oci-ai-data-platform-workbench-starter-kits",
+  "source_commit": "3c82617fd298933995e954955841007253cc0985",
+  "additional_selected_source": [
+    {
+      "source": "apps/backend/app/services/oci/aidp.py",
+      "source_sha256": "74269f5952d521c6550dc07114c39b5fef6ea8b0cc63780632b305ae73b453af",
+      "selected_class": "AidpClient",
+      "selected_methods": [
+        "__init__",
+        "close",
+        "_request_headers",
+        "_response_body",
+        "_safe_diagnostic_fragment",
+        "_request_error_message",
+        "_request",
+        "_page_items",
+        "_list",
+        "_notebook_matches",
+        "_resource_name",
+        "_job_task_matches",
+        "_job_tasks_match",
+        "_role",
+        "_role_principal_ocids",
+        "_role_user_ocids",
+        "platform_admin_user_ocids",
+        "platform_admin_principals",
+        "is_platform_admin"
+      ],
+      "adaptations": "Constructor accepts explicit authorized config/signer/client injection; excludes other module, participant and database orchestration."
+    }
+  ],
+  "test_adaptations": "Tests use an explicit fake OCI identity and signed viewer:<id> sessions rather than the retired portal password login. Domain assertions are retained. See tests/extraction-test-map.json and tests/validation-scope.json.",
+  "runtime_composition": "app.main:create_app --factory; lazy OCI factories; independent viewer API only, no installation or local password login."
+}

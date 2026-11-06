@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "module_id": "gods_eye_view",
+  "workspace_id": "default",
+  "publication_root": "/Workspace/medallion/gods_eye_view",
+  "assets": [
+    {
+      "source": null,
+      "workspace_path": "/Workspace/medallion/gods_eye_view/10_bronze/social_network.py",
+      "kind": "python",
+      "generated": true,
+      "assembly_sources": [
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/media.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/core.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/correlation.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/classification.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/control_store.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/post_index.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/landing.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/runtime_secrets.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/capture.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/x.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensors.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_capture.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_pipeline.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/synthetic_reset.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_reset.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/scheduling.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/pipeline.py",
+        "terraform/hooks/gods_eye_sources.py"
+      ],
+      "symbol_exports": {
+        "media": "photos",
+        "core": "PLATFORMS SYNTHETIC_MODES LOCALITIES CATEGORIES SEVERITIES CATEGORY_NAMES canonical_mode publication_revisions default_source aidp_credential_name utc_text simulation_state folded _event_location normalize_event image_hashes corroboration legacy_groups review_location incident_summary build_snapshot",
+        "correlation": "timestamp identity nearby distance_km expanded_claims retained_memberships nearest_group group_events activity relations jurisdiction same_jurisdiction social_context sensor_context sensor_index add_context",
+        "classification": "PROMPT_VERSION _NON_LITERAL_QUOTE _DUPLICATE_RISK _LABEL_PROPERTIES _CLASSIFICATION_SCHEMA _labels _claims classify",
+        "control_store": "DOCUMENT_NAME ControlConflict ObjectControlStore _valid_name read_document write_document mutate_document publish reset_version sensor_reset_version publications validate_replacement replace_synthetic_publication replace_sensor_publication upsert_posts",
+        "post_index": "POST_HEAD POST_RANK published_time _post_json _post_hash _post_integer _post_head _post_append _post_document _post_validate_event upsert_posts append_purge",
+        "landing": "ensure_volumes stream_progress page decode_record records write_objects",
+        "runtime_secrets": "SHARED_OCI_CREDENTIAL_NAME OCI_CREDENTIALS identity_hash values signer _oci_values _signer runtime_auth",
+        "capture": "schedule schedule_at query_lines",
+        "x": "THIRD_PARTY XFailure retry_time fetch_page _post_event query_checkpoint poll_queries _poll_status",
+        "sensors": "SENSOR_TYPES validate_record apply_locations",
+        "sensor_capture": "_current_state _family_change",
+        "sensor_pipeline": "MAX_BATCH_RECORDS MAX_VISIBLE_SENSORS SENSOR_SCHEMA decode_batch SensorLake",
+        "synthetic_reset": "HISTORY_PREFIX VERSION HISTORY_BATCH_BYTES encoded _synthetic_ids prune_publication _versioned_replacement object_keys object_body delete_object clean_landing _clean_controls _save_clean_history _history_batches _delete_history_object _history_objects clean_history execute",
+        "sensor_reset": "family _validate_rows _remaining_body _clear_controls clean_landing execute",
+        "scheduling": "JOB_FIELDS RUN_SUCCESS RUN_FAILED TASK_RUN_QUERY SOCIAL_TASK_KEYS run_state task_outcome needs_schedule job_path set_schedule active_run submit_run keep_streams_running workbench_request reconcile_after_tick",
+        "pipeline": "encoded DeltaLake _put_object install_post_views install_gold_views ingest_page start_landing consume_landing _consume_format _status _due _source_token _poll_x poll_source publish_snapshot _finish_enrichment enrich_pending _tick process_reset stop_streams run_persistent run"
+      }
+    },
+    {
+      "source": null,
+      "workspace_path": "/Workspace/medallion/gods_eye_view/10_bronze/sensor_stream.py",
+      "kind": "python",
+      "generated": true,
+      "assembly_sources": [
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/core.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensors.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/control_store.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/landing.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/runtime_secrets.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_pipeline.py",
+        "terraform/hooks/gods_eye_sources.py"
+      ],
+      "symbol_exports": {
+        "core": "utc_text",
+        "sensors": "SENSOR_TYPES validate_record",
+        "control_store": "DOCUMENT_NAME ControlConflict ObjectControlStore _valid_name read_document write_document mutate_document sensor_reset_version reset_version",
+        "landing": "ensure_volumes stream_progress",
+        "runtime_secrets": "SHARED_OCI_CREDENTIAL_NAME OCI_CREDENTIALS identity_hash values _oci_values _signer runtime_auth",
+        "sensor_pipeline": "MAX_BATCH_RECORDS MAX_VISIBLE_SENSORS SENSOR_SCHEMA decode_batch SensorLake reset_barrier run"
+      }
+    },
+    {
+      "source": null,
+      "workspace_path": "/Workspace/medallion/gods_eye_view/40_report/ai_gods_eye_view.py",
+      "kind": "python",
+      "generated": true,
+      "assembly_sources": [
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/agent.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/area.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/core.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/runtime_secrets.py",
+        "apps/backend/app/modules/ai_gods_eye_view/runtime/gold_reader.py",
+        "terraform/hooks/gods_eye_agent_source.py",
+        "terraform/hooks/gods_eye_sources.py"
+      ]
+    }
+  ],
+  "resources": {
+    "definition_source": "terraform/hooks/gods_eye_view_bootstrap.py",
+    "workflows": [
+      "wf_ai_gods_eye_view_social_network",
+      "wf_ai_gods_eye_view_sensor_stream"
+    ],
+    "compute": [
+      "aidp_gods_eye_view_social_compute",
+      "aidp_gods_eye_view_sensor_compute",
+      "aidp_gods_eye_view_query_compute",
+      "aidp_gods_eye_view_agent_compute"
+    ],
+    "agent": "ai_gods_eye_view",
+    "gold_views": [
+      "oci_gold.territorial_incidents",
+      "oci_gold.territorial_evidence",
+      "oci_gold.territorial_sensors",
+      "oci_gold.territorial_event_posts"
+    ]
+  },
+  "source_hashes": {
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/agent.py": "ce8a22a103a9f457b72991b1abc7a639b0e10c6ea618d9c3c31131dbd9ec846f",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/area.py": "4bf662df15250947d1694793712b42cc6116e19451b3dee5935a2eff4be10121",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/capture.py": "4823636a33b24e06ede9acd72553613fc03ff79e6e2cc0a8e84ada5fdcaed9c1",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/classification.py": "6a7123e3f7050e4d6f178e1445c091672f0dca6dd48da0ac147f76b492d817d0",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/control_store.py": "5f87c672b8db9a3b58221253fbde6c0376a6906855e7cd110c5f4a853aecb8f3",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/core.py": "dc476122001933a1e180b3930d7e59b949c9f4dcd016d7fa761435fcb20b5460",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/correlation.py": "9c322a2a5bdfcc917bf4ac3945a3a95fcef8274ef9e9b2765b3462c4a6255ed9",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/gold_reader.py": "6d138e2063a5895d679e666e6cddd7d1761a03ffd625d9ee7313dd4a1b5634c7",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/landing.py": "ac31bc4aa4fafe3c1e2275aa5702ffb957f56126410e6a14e5ecbd61021c2477",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/media.py": "dc6348ccfa9cbfdea22929f10d218ed4cc68afcae83b147a7e61335956afe025",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/pipeline.py": "37dc4609cc8017a0a1d607edc5d349e4683d213908d39d0598a70c42bb486d06",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/post_index.py": "b8ae43b345c585594dc45b08be35ae8493c5b7d01341e58b72ed4ebb696a95c4",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/runtime_secrets.py": "869911c81e4f40f51551f4153c8d14b7595ebeffe8b43d1a867f04a70493ef0d",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/scheduling.py": "03ad61a986f9b5e3daa916fd1450a13e616a6676277d8df0008d1ff20d5abba9",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_capture.py": "11408a85eab6690d7926673e555a49f71e30ea03f89b2028271311ccc7bd187d",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_pipeline.py": "49344e005d93707d8c332bc01c786440e3589f4d6d445e16ef60a2977780a5f7",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/sensor_reset.py": "89a24ff873cc0416937cb200aaebaeb0b15d751392a1913d7824178a57c808fd",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/sensors.py": "5d5434033fc9b7dfb2360177767acaa4da188116259ac232ba2bb7826a6ee33a",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/synthetic_reset.py": "f8ebaee77ce29d133f2d0c22ec5fe2ab53f974c21de6caea9428ebcad0b99414",
+    "apps/backend/app/modules/ai_gods_eye_view/runtime/x.py": "0bd871f086fea7fe296aa0a42efdd8c06dd34c596a858094177dd9598cd69ead",
+    "terraform/hooks/gods_eye_agent_source.py": "58b9e99bebcead85ba07282c318057d2b9e1aa14573d00f1b63dcf91fdc60d6e",
+    "terraform/hooks/gods_eye_sources.py": "d9b845367d144dae227a0b1e5cbaedd77a45b12c7282e930acde2b1d0f6bd494",
+    "terraform/hooks/gods_eye_view_bootstrap.py": "f224b42fb1f3498b78e33900bb7b007c9c04409e355e2cd192e455727a965aec"
+  }
+}

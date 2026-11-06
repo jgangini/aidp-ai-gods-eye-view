@@ -1,0 +1,11 @@
+{
+  "retired_source_tests": {
+    "test_gods_eye_view_membership_api.py": "Portal grants/users API removed; product authorization suite covers reader/admin and revocation; installation grants belong to CLI.",
+    "test_gods_eye_view_user_creation.py": "Starter Kits user registration is not part of product; product authorization suite asserts routes absent.",
+    "test_gods_eye_view_runtime_mode.py": "Portal mixed local/cloud factories removed; explicit product local/oci mode tested in product authorization.",
+    "test_gods_eye_view_compatibility.py": "Portal public config/registration/catalog removed; product authorization replaces security/route assertions.",
+    "test_identity_gods_eye_view.py": "Portal identity provisioning and local password clients removed; product authorization tests read-only active account, exact group role and revocation."
+  },
+  "replacement": "modules/ai_gods_eye_view/test_product_authorization.py",
+  "notes": "Domain assertions remain in transferred tests; retired portal/install surfaces must not be restored to make their source tests pass."
+}

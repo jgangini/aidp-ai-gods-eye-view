@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "labs": [
+    "gods_eye_view"
+  ],
+  "descriptions": {
+    "gods_eye_view": "Deploy an independent map viewer with shared social and sensor workflows and evidence-grounded Gold queries."
+  }
+}

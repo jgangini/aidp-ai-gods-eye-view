@@ -1,0 +1,17 @@
+.oci/
+.local/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+.upstream/
+dist/
+*.tfstate*
+.terraform/
+*.pem
+*.key
+.env
+.env.*
+.sentrux/baseline.json
+pytest-cache-files-*/

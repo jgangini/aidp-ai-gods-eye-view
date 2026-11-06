@@ -1,0 +1,61 @@
+name: Candidate checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r apps/backend/requirements-dev.txt
+      - run: python scripts/check_product.py --backend-only
+      - run: python scripts/deployment/build_vm_bundle.py vm-bootstrap.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vm-bootstrap
+          path: vm-bootstrap.zip
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.7'
+      - run: terraform -chdir=terraform init -backend=false -input=false
+      - run: terraform -chdir=terraform fmt -check -recursive
+      - run: terraform -chdir=terraform validate
+      - run: terraform -chdir=terraform test
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: api
+            dockerfile: docker/Api.Dockerfile
+          - component: viewer
+            dockerfile: modules/ai-gods-eye-view/Dockerfile
+          - component: gateway
+            dockerfile: docker/Gateway.Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f ${{ matrix.dockerfile }} -t aidp-ai-gods-eye-view-${{ matrix.component }}:candidate .
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+      - run: npm ci --ignore-scripts
+        working-directory: apps/frontend
+      - run: npm test && npm run build
+        working-directory: apps/frontend
+      - run: python3 modules/ai-gods-eye-view/prepare_upstream.py
+      - run: npm ci --ignore-scripts
+        working-directory: modules/ai-gods-eye-view/.upstream
+      - run: node --test modules/ai-gods-eye-view/tests/*.test.mjs
+      - run: node modules/ai-gods-eye-view/native/runtime.mjs --build
+      - run: bash docker/tests/bootstrap-rollback.sh

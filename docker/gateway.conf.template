@@ -1,0 +1,86 @@
+log_format gods_eye_view '$remote_addr $request_method $uri $status';
+server {
+    access_log /var/log/nginx/access.log gods_eye_view;
+    listen 443 ssl;
+    server_name ${PUBLIC_HOST};
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 8m;
+    root /usr/share/nginx/html;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+
+    location = /_viewer_session {
+        internal;
+        proxy_pass http://api:8000/api/gods-eye-view/session;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header Host ${PUBLIC_HOST};
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Gods-Eye-View-User "";
+        proxy_set_header X-Gods-Eye-View-Role "";
+    }
+    location = /_admin_session {
+        internal;
+        proxy_pass http://api:8000/api/admin/session;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header Host ${PUBLIC_HOST};
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Gods-Eye-View-User "";
+        proxy_set_header X-Gods-Eye-View-Role "";
+    }
+    location = / { return 302 /gods-eye-view/; }
+    location = /health { default_type text/plain; return 200 "ok\n"; }
+    location = /gods-eye-view { return 302 /gods-eye-view/; }
+    location = /controls { return 302 /controls/; }
+    location ^~ /controls/ {
+        auth_request /_admin_session;
+        add_header Cache-Control no-store always;
+        add_header X-Frame-Options SAMEORIGIN always;
+        try_files $uri $uri/ /controls/index.html;
+    }
+    location ^~ /brand-icons/ {
+        auth_request /_admin_session;
+        try_files $uri =404;
+    }
+    location = /internal { return 404; }
+    location ^~ /internal/ { return 404; }
+    location ^~ /gods-eye-view/internal/ { return 404; }
+    location ^~ /gods-eye-view/__ { return 404; }
+    location /gods-eye-view/ {
+        auth_request /_viewer_session;
+        error_page 401 = @signin;
+        proxy_pass http://viewer:8081/;
+        include /etc/nginx/viewer-headers.conf;
+    }
+    location ~ ^/api/(setup|opensky|opensky-track|adsblol|adsbdb|celestrak|tomtom|firms|launches|terrain|overpass|military-installations|regional-brief|geocode|weather-effects|cctv|radio|gbfs|local-receivers|transit|ais-live|openai|google|realtime|route|wind|weather|cyclones|fire-perimeters)(/|$) {
+        auth_request /_viewer_session;
+        proxy_pass http://viewer:8081;
+        include /etc/nginx/viewer-headers.conf;
+    }
+    location = /api/auth/oci/callback {
+        access_log off;
+        error_log /dev/null;
+        proxy_pass http://api:8000;
+        proxy_set_header Host ${PUBLIC_HOST};
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Gods-Eye-View-User "";
+        proxy_set_header X-Gods-Eye-View-Role "";
+    }
+    location /api/ {
+        proxy_pass http://api:8000;
+        proxy_set_header Host ${PUBLIC_HOST};
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Gods-Eye-View-User "";
+        proxy_set_header X-Gods-Eye-View-Role "";
+        proxy_set_header X-Gev-Origin https://${PUBLIC_HOST};
+        proxy_read_timeout 300s;
+    }
+    location @signin { return 302 /api/auth/oci/login; }
+    location / { return 404; }
+}

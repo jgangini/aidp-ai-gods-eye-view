@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "test_root": "apps/backend/tests/modules/ai_gods_eye_view",
+  "categories": {
+    "product_security_and_contracts": [
+      "test_product_authorization.py",
+      "test_product_independence.py",
+      "test_aidp_product_manifest.py",
+      "test_viewer_auth.py"
+    ],
+    "viewer_bridge_and_upstream": [
+      "test_gods_eye_native_proxy.py",
+      "test_gods_eye_upstream.py",
+      "test_gods_eye_view_bridge.py",
+      "test_gods_eye_view_context.py",
+      "test_native_provider_runtime.py",
+      "test_viewer_identity_proxy.py",
+      "test_viewer_nginx.py"
+    ],
+    "providers_and_identity": [
+      "test_gods_eye_view_oci_provider.py",
+      "test_gods_eye_view_oci_voice.py",
+      "test_gods_eye_view_parameters.py",
+      "test_viewer_identity.py"
+    ],
+    "domain_controls_capture_pipeline_gold_and_recovery": [
+      "test_gods_eye_view.py",
+      "test_gods_eye_view_access.py",
+      "test_gods_eye_view_agent.py",
+      "test_gods_eye_view_agent_tools.py",
+      "test_gods_eye_view_area.py",
+      "test_gods_eye_view_capture.py",
+      "test_gods_eye_view_capture_schedule.py",
+      "test_gods_eye_view_classification.py",
+      "test_gods_eye_view_cloud.py",
+      "test_gods_eye_view_control_store.py",
+      "test_gods_eye_view_corpus.py",
+      "test_gods_eye_view_correlation_context.py",
+      "test_gods_eye_view_credentials.py",
+      "test_gods_eye_view_geography.py",
+      "test_gods_eye_view_gold_reader.py",
+      "test_gods_eye_view_media.py",
+      "test_gods_eye_view_object_post_index.py",
+      "test_gods_eye_view_pipeline.py",
+      "test_gods_eye_view_post_pagination.py",
+      "test_gods_eye_view_post_search.py",
+      "test_gods_eye_view_posts.py",
+      "test_gods_eye_view_provider_probes.py",
+      "test_gods_eye_view_python_tasks.py",
+      "test_gods_eye_view_queries.py",
+      "test_gods_eye_view_read_performance.py",
+      "test_gods_eye_view_reset_cancelled.py",
+      "test_gods_eye_view_sensor_families.py",
+      "test_gods_eye_view_sensor_pipeline.py",
+      "test_gods_eye_view_sensor_recovery.py",
+      "test_gods_eye_view_sensor_reset.py",
+      "test_gods_eye_view_sensor_reset_all.py",
+      "test_gods_eye_view_sensor_schedule.py",
+      "test_gods_eye_view_sensors.py",
+      "test_gods_eye_view_source_reads.py",
+      "test_gods_eye_view_streaming.py",
+      "test_gods_eye_view_synthetic_reset.py",
+      "test_gods_eye_view_synthetic_reset_api.py",
+      "test_gods_eye_view_synthetic_reset_local.py"
+    ]
+  },
+  "retained_source_suites_outside_current_product_contract": {
+    "test_gods_eye_view_installation.py": {
+      "status": "retained_for_review_not_a_product_gate",
+      "reason": "Tests the removed portal and original combined-stack Resource Manager module-install protocol; runtime not mounted or imported. Import currently depends on a retired portal fixture. Automatic review rejected deletion; retained unchanged as evidence.",
+      "replacement": [
+        "tests/test_deployment.py",
+        "terraform/tests/test_gods_eye_view_bootstrap.py",
+        "test_product_authorization.py"
+      ]
+    },
+    "test_gods_eye_view_module.py": {
+      "status": "retained_for_review_not_a_product_gate",
+      "reason": "Tests combined portal module activation and its fixture factories; independent installation belongs to Deploy Studio. Automatic review rejected deletion; retained for replacement review.",
+      "replacement": [
+        "tests/test_deployment.py",
+        "terraform/tests/test_gods_eye_view_bootstrap.py",
+        "test_gods_eye_view_streaming.py"
+      ]
+    }
+  },
+  "actual_checks": {
+    "product_security_and_contracts_latest": "20 passed (product auth + independence + AIDP manifest); signed OIDC included in API batch",
+    "api_batch_latest": "184 passed: parameters, posts, post_search, oci_provider, oci_voice, viewer_auth, aidp manifest, object_post_index",
+    "state_batch_latest": "78 passed: gods_eye_view, capture_schedule, viewer_identity, product_authorization",
+    "initial_domain_batch": "220 passed,1 skipped: cloud, gold_reader, agent, control_store",
+    "full_transferred_diagnostic_before_adaptations": "1294 passed,95 failed,6 skipped,1 collection error; NOT a passing product gate. Log .local/backend-tests-2.log ignored/private."
+  },
+  "notes": [
+    "This inventory does not authorize deleting retained files or accepting unexplained failing product checks.",
+    "The coordinator owns final integrated product postflight and must report its exact selection and remaining retained-suite coverage gaps.",
+    "Viewer agent owns current bridge/native fixture updates; their final results supersede the initial diagnostic.",
+    "Arko guidance applied to responsibilities; current CLI profile assumes backend/app/features and cannot validate the preserved apps/backend/app/modules layout without an adapter. No Arko check pass claimed."
+  ]
+}

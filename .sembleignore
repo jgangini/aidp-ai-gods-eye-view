@@ -1,0 +1,9 @@
+.oci/
+.local/
+.venv/
+.git/
+.codex/
+.upstream/
+node_modules/
+dist/
+graphify-out/

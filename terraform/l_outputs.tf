@@ -1,0 +1,15 @@
+output "ai_data_platform_id" { value = local.platform_id }
+output "existing_workspace_key" { value = var.existing_workspace_key }
+output "default_workspace_name" { value = "${var.name}-workspace" }
+output "objectstorage_namespace" { value = data.oci_objectstorage_namespace.product.namespace }
+output "medallion_bucket_names" { value = jsondecode(var.medallion_bucket_names) }
+output "artifacts_bucket_name" { value = var.artifacts_bucket_name }
+output "compartment_ocid" { value = var.compartment_ocid }
+output "instance_id" { value = oci_core_instance.product.id }
+output "admin_user_ocid" { value = var.admin_user_ocid }
+output "identity_domain_id" { value = var.identity_domain_id }
+output "identity_domain_url" { value = var.identity_domain_url }
+output "gods_eye_view_group_id" { value = oci_identity_domains_group.readers.id }
+output "viewer_oidc_app_name" { value = oci_identity_domains_app.viewer.name }
+output "public_origin" { value = var.public_origin }
+output "agent_model_id" { value = var.agent_model_id }

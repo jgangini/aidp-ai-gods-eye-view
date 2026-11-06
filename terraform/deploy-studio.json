@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "project_id": "aidp-ai-gods-eye-view",
+  "terraform": {
+    "path": "terraform",
+    "package_oci_credentials": false
+  },
+  "capabilities": {
+    "compartment_modes": [
+      "new",
+      "existing"
+    ],
+    "default_compartment_name": "aidp-gods-eye-view",
+    "database_profile": "none",
+    "region_selection": "subscribed_compatible",
+    "regional_requirements": [
+      "aidp",
+      "genai_chat"
+    ]
+  },
+  "presentation": {
+    "title": "God\u2019s Eye View",
+    "summary": "Independent territorial viewer with integrated social and sensor controls, AIDP Gold queries and verified OCI access. Installation and updates run through Deploy Studio.",
+    "tags": [
+      "AI Data Platform Workbench",
+      "Object Storage",
+      "VM"
+    ],
+    "href": "https://github.com/jgangini/aidp-ai-gods-eye-view"
+  },
+  "run_steps": [
+    {
+      "key": "queue",
+      "label": "Queue"
+    },
+    {
+      "key": "credentials",
+      "label": "Operator identity"
+    },
+    {
+      "key": "plan",
+      "label": "Resource plan"
+    },
+    {
+      "key": "apply",
+      "label": "Apply selected resources"
+    },
+    {
+      "key": "application",
+      "label": "AIDP and viewer verification"
+    },
+    {
+      "key": "complete",
+      "label": "Complete"
+    }
+  ],
+  "form": {
+    "fields": [
+      {
+        "name": "identity_domain_id",
+        "label": "Identity Domain OCID",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "aidp_mode",
+        "label": "AI Data Platform",
+        "type": "select",
+        "required": true,
+        "options": [
+          {
+            "value": "new",
+            "label": "Create new platform"
+          },
+          {
+            "value": "existing",
+            "label": "Use existing platform"
+          }
+        ],
+        "default": "new"
+      },
+      {
+        "name": "existing_ai_data_platform_ocid",
+        "label": "Existing AIDP OCID",
+        "type": "text",
+        "required": true,
+        "visible_when": {
+          "field": "aidp_mode",
+          "equals": "existing"
+        }
+      },
+      {
+        "name": "existing_workspace_key",
+        "label": "Existing workspace key",
+        "type": "text",
+        "required": true,
+        "visible_when": {
+          "field": "aidp_mode",
+          "equals": "existing"
+        }
+      },
+      {
+        "name": "existing_catalog_key",
+        "label": "Exact existing catalog key (optional)",
+        "type": "text",
+        "required": false
+      },
+      {
+        "name": "admin_user_ocid",
+        "label": "Administrator (new platform: assignment verified after bootstrap)",
+        "type": "select",
+        "required": true,
+        "options_source": "oci_aidp_administrators"
+      },
+      {
+        "name": "name",
+        "label": "Stable product resource prefix",
+        "type": "text",
+        "required": true,
+        "default": "aidp-gods-eye-view"
+      },
+      {
+        "name": "create_buckets",
+        "label": "Create the five selected buckets",
+        "type": "boolean",
+        "required": true,
+        "default": true
+      },
+      {
+        "name": "landing_bucket_name",
+        "label": "Landing bucket name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "bronze_bucket_name",
+        "label": "Bronze bucket name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "silver_bucket_name",
+        "label": "Silver bucket name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "gold_bucket_name",
+        "label": "Gold bucket name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "artifacts_bucket_name",
+        "label": "Operational artifacts bucket name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "public_origin",
+        "label": "Viewer HTTPS origin",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "availability_domain",
+        "label": "VM availability domain",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "image_ocid",
+        "label": "Oracle Linux image OCID",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "agent_model_id",
+        "label": "OCI agent model ID",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "vm_bundle_object",
+        "label": "Immutable VM bootstrap object path",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "vm_bundle_sha256",
+        "label": "VM bootstrap SHA-256",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "api_image",
+        "label": "API image by digest",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "viewer_image",
+        "label": "Viewer image by digest",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "gateway_image",
+        "label": "Gateway image by digest",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "tls_certificate",
+        "label": "TLS certificate PEM",
+        "type": "password",
+        "required": true,
+        "secret": true,
+        "transform": "none",
+        "max_length": 4096
+      },
+      {
+        "name": "tls_key",
+        "label": "TLS private key PEM",
+        "type": "password",
+        "required": true,
+        "secret": true,
+        "transform": "none",
+        "max_length": 4096
+      },
+      {
+        "name": "registry_config",
+        "label": "Private registry config JSON (when required)",
+        "type": "password",
+        "secret": true,
+        "transform": "none",
+        "required": false,
+        "max_length": 4096
+      }
+    ]
+  },
+  "outputs": [
+    "ai_data_platform_id",
+    "instance_id",
+    "public_origin",
+    "admin_user_ocid",
+    "identity_domain_id"
+  ],
+  "preflight": {
+    "entrypoint": "terraform/hooks/preflight.py",
+    "requires_oci_credentials": true,
+    "timeout_seconds": 900,
+    "output_inputs": [
+      "identity_domain_url",
+      "home_region",
+      "operator_user_ocid",
+      "operator_fingerprint",
+      "medallion_bucket_names"
+    ],
+    "runtime_fields": [
+      {
+        "name": "identity_domain_url",
+        "label": "Verified Identity Domain endpoint",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "home_region",
+        "label": "Tenancy home region",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "operator_user_ocid",
+        "label": "Authorized deployment operator",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "operator_fingerprint",
+        "label": "Authorized operator fingerprint",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "medallion_bucket_names",
+        "label": "Verified medallion bucket bindings",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  "post_apply": {
+    "entrypoint": "terraform/hooks/post_apply.py",
+    "requires_oci_credentials": true,
+    "timeout_seconds": 3600,
+    "include_paths": [
+      "apps/backend/app",
+      "scripts/deployment",
+      "docker/bootstrap.sh",
+      "docker/compose.yml"
+    ],
+    "secret_inputs": [
+      "tls_certificate",
+      "tls_key",
+      "registry_config"
+    ]
+  }
+}
