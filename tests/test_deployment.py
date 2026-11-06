@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "scripts/deployment"))
 sys.path.insert(0, str(ROOT / "apps/backend"))
 import bootstrap_credentials as envelope
 from preflight import validate_inputs, verify_administrator, source_context
-from post_apply import InstallationJournal, grant_new_platform_admin, wait_viewer_health, install
+from post_apply import InstallationJournal, grant_new_platform_admin, wait_viewer_health, install, catalog
 import gods_eye_view_bootstrap as native
 from types import SimpleNamespace
 
@@ -36,6 +36,13 @@ def test_source_sha_comes_from_runner_metadata_and_cannot_be_replaced_by_form():
     assert source_context(context)["inputs"]["source_commit_sha"] == "a" * 40
     with pytest.raises(ValueError, match="differs"):
         source_context({**context, "inputs": {"source_commit_sha": "b" * 40}})
+
+
+def test_resume_rejects_a_changed_catalog_selection_before_any_request():
+    journal = InstallationJournal(Store(), {"deployment_id": "one"}, clock=lambda: 10)
+    journal.record("catalog", "original-key")
+    with pytest.raises(ValueError, match="differs"):
+        catalog(SimpleNamespace(), journal, "other-key")
 
 
 def test_buckets_and_existing_workspace_fail_closed():

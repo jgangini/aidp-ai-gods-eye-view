@@ -78,6 +78,8 @@ def resolve_workspace(api, context, outputs):
 
 def catalog(api, journal, external_key=""):
     key = journal.state["resources"].get("catalog")
+    if key and external_key and key != external_key:
+        raise ValueError("Selected catalog differs from this installation's exact receipt")
     if not key and external_key:
         value = api.request("GET", "/catalogs/" + quote(external_key, safe="")).body
         if value.get("key") != external_key or value.get("displayName") != "oci_medallion" or value.get("catalogType") != "INTERNAL":
