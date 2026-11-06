@@ -1,14 +1,12 @@
 {
   "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
-  "proposed_tag": "v2.0.0",
   "commit": "f74fb0b2f8fa675b186f03e9e1839970d2937b62",
   "release_id": 436528205,
-  "draft_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/untagged-76689b908c4dd72fd0b6",
-  "draft": true,
-  "immutable": false,
+  "draft": false,
+  "immutable": true,
   "prerelease": false,
-  "published": false,
-  "publication_status": "Blocked by automatic approval review: schema migration authorization does not cover this specific new public immutable release and six assets",
+  "published": true,
+  "publication_status": "Published by coordinator after explicit user approval; tag and six asset IDs, sizes and SHA-256 verified",
   "assets": {
     "gods-eye-view-api-image-amd64.tar.gz": {
       "asset_id": 717247390,
@@ -163,5 +161,9 @@
   "oci_mutations": 0,
   "pull_request": "https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1",
   "manifest_schema_version": 2,
-  "required_engine": "Deploy Studio schema 2 only"
+  "required_engine": "Deploy Studio schema 2 only",
+  "tag": "v2.0.0",
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.0.0",
+  "published_at": "2026-11-06T14:31:55Z",
+  "tag_commit_sha": "f74fb0b2f8fa675b186f03e9e1839970d2937b62"
 }

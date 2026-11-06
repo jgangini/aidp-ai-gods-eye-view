@@ -2,11 +2,11 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
-## Candidato de formulario completo v2.0.0
+## Formulario completo v2.0.0 publicado
 
 El [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1) utiliza `schema_version: 2` y grupos JSON completos sobre `f74fb0b2f8fa675b186f03e9e1839970d2937b62`. Región tiene `span: 2` encima de los controles de compartimento. [CI 42224278241](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42224278241) aprobó seis jobs; postflight final: 1700 passed, seis skips y tres mocks Terraform aprobados. Sentrux conserva el fallo histórico; Graphify se consultó y su actualización queda al coordinador.
 
-Borrador ID `436528205`, seis assets verificados y handoff/CAS simulado aprobado. **Publicación rechazada por la revisión automática al no reconocer autorización específica para esta nueva release y sus seis assets.** No se reintentó ni se pidió otra aprobación desde este chat. El [recibo](../releases/v2.0.0-candidate.json) y la [evidencia completa](../evidence/deploy-studio-form-schema2.md) distinguen esta preparación de aceptación OCI. Requiere publicar el motor CTN exclusivo de schema 2 antes de las pruebas de instalación.
+La [release v2.0.0](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v2.0.0), ID `436528205`, está publicada e inmutable tras la aprobación explícita del usuario y la publicación desde el coordinador. API y tag confirman `draft=false`, `immutable=true` y SHA `f74fb0b2f8fa675b186f03e9e1839970d2937b62`; los seis IDs, tamaños y hashes coinciden con el borrador verificado. El handoff/CAS simulado está aprobado. El [recibo publicado](../releases/v2.0.0-candidate.json) conserva su nombre de archivo original; la [evidencia completa](../evidence/deploy-studio-form-schema2.md) distingue publicación de aceptación OCI. Las pruebas de instalación requieren el motor CTN exclusivo de schema 2 y corresponden al coordinador.
 
 ## Compatibilidad del runner v1.0.3
 
