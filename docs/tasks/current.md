@@ -2,6 +2,14 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
+## Candidato de compatibilidad del runner v1.0.3
+
+Commit `6cf5814ca8c5dc44ab0b2333473c4745e3871a49`, [CI 42168548647](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42168548647) con seis jobs aprobados y borrador ID `436133209` con seis assets verificados. **Publicación pendiente de autorización explícita del usuario tras rechazo de la revisión automática.** No se publicó un nuevo tag ni se modificaron releases anteriores.
+
+El ajuste corrige los contextos pre/post de compartimento, declara los outputs consumidos tras el filtro CTN y verifica catálogo externo/recibo propio antes de APPLY. Postflight: 1699 passed, seis skips, tres mocks Terraform aprobados; Sentrux sigue DEGRADED y no se sobrescribió su baseline. La [evidencia del runner](../evidence/deploy-studio-runner-contract.md) y el [recibo del candidato](../releases/v1.0.3-candidate.json) distinguen checks locales/CI de aceptación OCI pendiente. No ejecutar el borrador como release estable.
+
+## Release publicada anterior
+
 La corrección del primer arranque está publicada como [v1.0.2 pública e inmutable](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.2), ID `436043929`, sin draft/prerelease. Código: `730866e381d7573b9e40ab1badd1b152870de816`. [CI 42152185322](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42152185322): seis jobs aprobados. [Recibo de seis assets, imágenes y hashes](../releases/v1.0.2.json).
 
 La release anterior [v1.0.0](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.0) se conserva inmutable con sus seis assets ([recibo](../releases/v1.0.0.json)). También se conserva [v1.0.1](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.1), con su [recibo](../releases/v1.0.1.json), pública e inmutable. El cierre posterior en main solo modifica documentación. No se hicieron mutaciones OCI, inferencia ni actores pagados; instalación y aceptación reales corresponden al coordinador.
