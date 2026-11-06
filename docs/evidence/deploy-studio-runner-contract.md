@@ -1,8 +1,8 @@
-# Compatibilidad del runner: candidato v1.0.3
+# Compatibilidad del runner: preparación de v1.0.3
 
-Fuente comprobada: `6cf5814ca8c5dc44ab0b2333473c4745e3871a49`. El [borrador](https://github.com/jgangini/aidp-ai-gods-eye-view/releases) tiene ID `436133209` y seis assets verificados. **No está publicado ni es inmutable todavía.** La revisión automática rechazó la publicación porque requiere autorización explícita del usuario para exponer este nuevo payload público e inmutable. No se intentó otro mecanismo de publicación.
+Fuente comprobada: `6cf5814ca8c5dc44ab0b2333473c4745e3871a49`. La [release v1.0.3](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.3), ID `436133209`, está publicada e inmutable con seis assets verificados. La revisión automática rechazó inicialmente la publicación desde este chat; el coordinador la publicó después desde el chat con autorización directa del usuario. Esta evidencia conserva el alcance de la preparación original.
 
-El [recibo del candidato](../releases/v1.0.3-candidate.json) conserva tamaños, hashes, IDs de imagen y estado del borrador. Las releases v1.0.0, v1.0.1 y v1.0.2 mantienen sus IDs, assets, tamaños, SHA-256 e inmutabilidad. La última release instalable sigue siendo v1.0.2 hasta publicar otra estable.
+El [recibo publicado](../releases/v1.0.3.json) confirma el estado remoto y los mismos assets del [recibo histórico del borrador](../releases/v1.0.3-candidate.json). Las releases v1.0.0, v1.0.1 y v1.0.2 mantienen sus IDs, assets, tamaños, SHA-256 e inmutabilidad. El manifiesto de v1.0.3 utiliza schema 1; un motor Deploy Studio exclusivo de schema 2 requiere una release posterior compatible.
 
 ## Contratos corregidos
 
@@ -31,4 +31,4 @@ Se examinaron sin ejecutar contenedores las tres imágenes, incluidas sus capas 
 
 El escáner del repositorio y `git diff --check` se ejecutaron antes de subir la fuente. La revisión por patrones no acredita ausencia absoluta de secretos ni resuelve los [avisos heredados de dependencias](native-dependency-review.md).
 
-La publicación, registro del catálogo, aceptación de IAM/roles, capacidad VM, confianza TLS en Browser, workflows/publicaciones AIDP y conversación del agente siguen pendientes. El coordinador conserva Browser, Docker y mutaciones OCI sobre la plataforma compartida. Este trabajo no ejecutó OCI, inferencia ni actores pagados.
+La publicación de v1.0.3 está confirmada; registro del catálogo y aceptación de IAM/roles, capacidad VM, confianza TLS en Browser, workflows/publicaciones AIDP y conversación del agente corresponden al coordinador. Este trabajo no ejecutó OCI, inferencia ni actores pagados.

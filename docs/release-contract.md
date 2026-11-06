@@ -24,8 +24,9 @@ Una release publicada o un CI aprobado no acreditan instalación OCI, permisos e
 
 ## Evidencia y pruebas
 
-- Recibos: [v1.0.2](releases/v1.0.2.json), [v1.0.1](releases/v1.0.1.json), [v1.0.0](releases/v1.0.0.json).
-- Candidato [v1.0.3](releases/v1.0.3-candidate.json): borrador pendiente de aprobación, aún no instalable; [evidencia de compatibilidad del runner](evidence/deploy-studio-runner-contract.md).
+- Recibos publicados: [v1.0.3](releases/v1.0.3.json), [v1.0.2](releases/v1.0.2.json), [v1.0.1](releases/v1.0.1.json), [v1.0.0](releases/v1.0.0.json). Sus manifiestos schema 1 requieren un motor compatible con ese contrato.
+- Candidato [v2.0.0](releases/v2.0.0-candidate.json): formulario completo schema 2, borrador pendiente de publicación; [evidencia de formulario y validación](evidence/deploy-studio-form-schema2.md).
+- La [preparación histórica de v1.0.3](evidence/deploy-studio-runner-contract.md) conserva su [recibo original de borrador](releases/v1.0.3-candidate.json).
 - [Verificación de imágenes y CAS](../tests/test_image_assets.py), [carga VM](../tests/test_image_assets_vm.py) y [empaquetado](../tests/test_release_candidate.py).
 - [Rollback reproducible](../docker/tests/bootstrap-rollback.sh) y [alcance de validación](../apps/backend/tests/validation-scope.json).
 - El historial de extracción y los informes de ejecución se mantienen en `docs/migration-assessment.md`, `docs/extraction-provenance.json` y `docs/tasks/`; no son instrucciones de instalación.

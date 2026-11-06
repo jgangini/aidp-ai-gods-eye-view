@@ -2,9 +2,15 @@
 
 Este archivo conserva evidencia histórica de validación, no instrucciones de instalación. El repositorio y sus releases son públicos; la [revisión de publicación](../evidence/publication-review.md) registra el alcance. Para funcionamiento actual, consultar [README](../../README.md), [contratos](../contracts.md) y [operación](../operations.md). Los límites de aceptación aquí descritos no equivalen a una comprobación nueva del entorno OCI.
 
-## Candidato de compatibilidad del runner v1.0.3
+## Candidato de formulario completo v2.0.0
 
-Commit `6cf5814ca8c5dc44ab0b2333473c4745e3871a49`, [CI 42168548647](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42168548647) con seis jobs aprobados y borrador ID `436133209` con seis assets verificados. **Publicación pendiente de autorización explícita del usuario tras rechazo de la revisión automática.** No se publicó un nuevo tag ni se modificaron releases anteriores.
+El [PR #1](https://github.com/jgangini/aidp-ai-gods-eye-view/pull/1) utiliza `schema_version: 2` y grupos JSON completos sobre `f74fb0b2f8fa675b186f03e9e1839970d2937b62`. Región tiene `span: 2` encima de los controles de compartimento. [CI 42224278241](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42224278241) aprobó seis jobs; postflight final: 1700 passed, seis skips y tres mocks Terraform aprobados. Sentrux conserva el fallo histórico; Graphify se consultó y su actualización queda al coordinador.
+
+Borrador ID `436528205`, seis assets verificados y handoff/CAS simulado aprobado. **Publicación rechazada por la revisión automática al no reconocer autorización específica para esta nueva release y sus seis assets.** No se reintentó ni se pidió otra aprobación desde este chat. El [recibo](../releases/v2.0.0-candidate.json) y la [evidencia completa](../evidence/deploy-studio-form-schema2.md) distinguen esta preparación de aceptación OCI. Requiere publicar el motor CTN exclusivo de schema 2 antes de las pruebas de instalación.
+
+## Compatibilidad del runner v1.0.3
+
+Commit `6cf5814ca8c5dc44ab0b2333473c4745e3871a49`, [CI 42168548647](https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42168548647) con seis jobs aprobados y release ID `436133209` con seis assets verificados. El coordinador la publicó después del rechazo inicial desde el chat con autorización directa: [v1.0.3 pública e inmutable](https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.3), con [recibo publicado](../releases/v1.0.3.json). Conserva su manifiesto schema 1; las releases anteriores permanecen intactas.
 
 El ajuste corrige los contextos pre/post de compartimento, declara los outputs consumidos tras el filtro CTN y verifica catálogo externo/recibo propio antes de APPLY. Postflight: 1699 passed, seis skips, tres mocks Terraform aprobados; Sentrux sigue DEGRADED y no se sobrescribió su baseline. La [evidencia del runner](../evidence/deploy-studio-runner-contract.md) y el [recibo del candidato](../releases/v1.0.3-candidate.json) distinguen checks locales/CI de aceptación OCI pendiente. No ejecutar el borrador como release estable.
 
