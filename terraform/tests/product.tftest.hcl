@@ -33,6 +33,35 @@ variables {
 run "new_platform_owned" {
   command = plan
   assert {
+    condition = (
+      !issensitive(output.deploy_studio_resource_labels) &&
+      toset(keys(output.deploy_studio_resource_labels)) == toset([
+        "data.oci_objectstorage_namespace.product",
+        "oci_core_vcn.product",
+        "oci_core_internet_gateway.product",
+        "oci_core_route_table.product",
+        "oci_core_security_list.product",
+        "oci_core_subnet.product",
+        "oci_core_instance.product",
+        "oci_identity_domains_group.readers",
+        "oci_identity_domains_app.viewer",
+        "oci_identity_dynamic_group.bootstrap",
+        "oci_identity_policy.bootstrap",
+        "oci_ai_data_platform_ai_data_platform.product[0]",
+        "oci_identity_policy.aidp_service[0]",
+        "time_sleep.aidp_iam_propagation[0]",
+        "oci_objectstorage_bucket.product[\"landing\"]",
+        "oci_objectstorage_bucket.product[\"bronze\"]",
+        "oci_objectstorage_bucket.product[\"silver\"]",
+        "oci_objectstorage_bucket.product[\"gold\"]",
+        "oci_objectstorage_bucket.product[\"artifacts\"]",
+      ]) &&
+      alltrue([for label in values(output.deploy_studio_resource_labels) : length(label) > 0 && length(label) <= 80])
+    )
+    error_message = "Display labels must be available during PLAN, nonsensitive, and cover exactly the selected resource and data instances."
+  }
+
+  assert {
     condition     = oci_ai_data_platform_ai_data_platform.product[0].display_name == var.name
     error_message = "Omitting an explicit AIDP display name must preserve the infrastructure prefix contract."
   }
@@ -67,6 +96,28 @@ run "new_platform_display_name_is_separate" {
 }
 run "existing_platform_external" {
   command = plan
+  assert {
+    condition = (
+      !issensitive(output.deploy_studio_resource_labels) &&
+      toset(keys(output.deploy_studio_resource_labels)) == toset([
+        "data.oci_objectstorage_namespace.product",
+        "oci_core_vcn.product",
+        "oci_core_internet_gateway.product",
+        "oci_core_route_table.product",
+        "oci_core_security_list.product",
+        "oci_core_subnet.product",
+        "oci_core_instance.product",
+        "oci_identity_domains_group.readers",
+        "oci_identity_domains_app.viewer",
+        "oci_identity_dynamic_group.bootstrap",
+        "oci_identity_policy.bootstrap",
+        "data.oci_ai_data_platform_ai_data_platform.existing[0]",
+      ]) &&
+      alltrue([for label in values(output.deploy_studio_resource_labels) : length(label) > 0 && length(label) <= 80])
+    )
+    error_message = "Display labels must be available during PLAN, nonsensitive, and cover exactly the selected resource and data instances."
+  }
+
   variables {
     aidp_mode                      = "existing"
     existing_ai_data_platform_ocid = "ocid1.aidataplatform.oc1..external"
@@ -104,6 +155,11 @@ run "new_artifacts_existing_medallion" {
 }
 run "mixed_individual_buckets" {
   command = plan
+  assert {
+    condition     = toset([for address in keys(output.deploy_studio_resource_labels) : address if startswith(address, "oci_objectstorage_bucket.")]) == toset(["oci_objectstorage_bucket.product[\"landing\"]", "oci_objectstorage_bucket.product[\"silver\"]", "oci_objectstorage_bucket.product[\"artifacts\"]"]) && output.deploy_studio_resource_labels["oci_objectstorage_bucket.product[\"landing\"]"] == "Landing bucket"
+    error_message = "Plan resource labels must identify the selected infrastructure without exposing instance suffixes."
+  }
+
   variables {
     bucket_modes = jsonencode({ landing = "new", bronze = "existing", silver = "new", gold = "existing", artifacts = "new" })
   }
