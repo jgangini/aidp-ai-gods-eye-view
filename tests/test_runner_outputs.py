@@ -22,6 +22,7 @@ from vm_delivery import runtime_environment
 
 
 TERRAFORM_OUTPUTS = {
+    "deploy_studio_resource_labels",
     "ai_data_platform_id", "existing_workspace_key", "default_workspace_name",
     "objectstorage_namespace", "medallion_bucket_names", "artifacts_bucket_name",
     "bucket_modes",
