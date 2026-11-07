@@ -608,6 +608,7 @@
     ]
   },
   "outputs": [
+    "deploy_studio_resource_labels",
     "ai_data_platform_id",
     "instance_id",
     "public_origin",

@@ -22,6 +22,7 @@ from vm_delivery import runtime_environment
 
 
 TERRAFORM_OUTPUTS = {
+    "deploy_studio_resource_labels",
     "ai_data_platform_id", "existing_workspace_key", "default_workspace_name",
     "objectstorage_namespace", "medallion_bucket_names", "artifacts_bucket_name",
     "bucket_modes",
@@ -49,6 +50,7 @@ def project_state(state, names):
 @pytest.fixture
 def state():
     values = {
+        "deploy_studio_resource_labels": {"oci_core_instance.product[0]": "Viewer VM"},
         "ai_data_platform_id": "ocid1.aidataplatform.oc1.iad.selected",
         "existing_workspace_key": "selected-workspace",
         "default_workspace_name": "viewer-workspace",
