@@ -1,0 +1,117 @@
+{
+  "commit": "3c82617fd298933995e954955841007253cc0985",
+  "files": [
+    {
+      "source": "apps/frontend/package-lock.json",
+      "sha256": "2114748e69254c4566a716d89f82309d7d2f97dd484bedc78a11ced445cc8034"
+    },
+    {
+      "source": "apps/frontend/package.json",
+      "sha256": "958b4f712f252e74d69b29fee8e359f0b61a9080502432350866882e0f2e2326"
+    },
+    {
+      "source": "apps/frontend/src/CaptureScheduleForm.tsx",
+      "sha256": "94975d58f4de0ff30eb7f6423e4802304cce737ddad5e384c1965b93f8c533f8"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewAdmin.tsx",
+      "sha256": "2e7ebbad753ba77fce35688a22b1500c9f1addeddc99c54e72b23b2129608379"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewOciParameters.tsx",
+      "sha256": "a09d1fbc619630a6eafedcccdb80755c56731b6e0943d06ce449b19ff98de475"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewParameters.tsx",
+      "sha256": "a94e4cc5b9f5b2521998ec2b426ce21e7637f682c7b1961d78eb4015412b2668"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewPosts.tsx",
+      "sha256": "fa3f96d2e6893e6255fda7e89bef567ae1ca5a1aea388b576c9da749300dbb43"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewSensorReadings.tsx",
+      "sha256": "d460e721f195713abf4252438752934379a1384483e1bd727c4e813cc8876e43"
+    },
+    {
+      "source": "apps/frontend/src/GodsEyeViewSensors.tsx",
+      "sha256": "4698973347af3d0b57c7f75dae1fb124763c7681669f61d0bbdb67d6990716c8"
+    },
+    {
+      "source": "apps/frontend/src/LoadingIndicator.tsx",
+      "sha256": "07f04e037936963e37580fecfde9a2464d01d09d8cd6a107a106a9fa805680d0"
+    },
+    {
+      "source": "apps/frontend/src/SearchableCombobox.tsx",
+      "sha256": "8508a3d9b1bd628a84df25c38361c885fdbc3d61dcc2cc3a1ce30f48af6c5e33"
+    },
+    {
+      "source": "apps/frontend/src/SettingsConfirmation.tsx",
+      "sha256": "fb95507584ab3f478adc15f731279f470b0e8e0d5ce22d055f1a109174bbce28"
+    },
+    {
+      "source": "apps/frontend/src/SyntheticDataReset.tsx",
+      "sha256": "920988074601439cfdbac4447dbccd2af628d09b7505748e42db3655bb275515"
+    },
+    {
+      "source": "apps/frontend/src/ViewerIdentitySettings.tsx",
+      "sha256": "20c3d5ccd494a18436b19d87ec4cc47d7273774a62ddd408b2d9f4021bf6d444"
+    },
+    {
+      "source": "apps/frontend/src/gods-eye-view.css",
+      "sha256": "e1fba91147e417b8e20d7128501b9d3a3de77fffe018fb0b0cde54c4f28e3c38"
+    },
+    {
+      "source": "apps/frontend/src/godsEyeViewAdminState.ts",
+      "sha256": "6f1eb137058af2c0929f3ee70df33cdc4937168c3183a78fb76c4c81f14534f0"
+    },
+    {
+      "source": "apps/frontend/tsconfig.json",
+      "sha256": "83efc1798334967d5a907f26b8cba31fa213f16b5ac0ed5c02fd38e7cf0ceb66"
+    },
+    {
+      "source": "apps/frontend/tests/gods-eye-view-admin.test.mjs",
+      "sha256": "7e82f30d54545a78fc2845a9ce3ab48bcf8b32a4d687f7cfdbc5231c17a7ff48"
+    },
+    {
+      "source": "apps/frontend/tests/gods-eye-view-sensors.test.mjs",
+      "sha256": "55c8dfca7f91d1914a902dbcd14b18b6cad531edb94d8b06b44d3f354f46619d"
+    },
+    {
+      "source": "apps/frontend/tests/gods-eye-view-sensor-readings.test.mjs",
+      "sha256": "b545f7c2d95f84a53cacbcd3da493d4d1ec832f44382ae413aeb5c1375f9a19b"
+    },
+    {
+      "source": "apps/frontend/tests/gods-eye-view-reset.test.mjs",
+      "sha256": "f4a68f0544725dc795c296b291b45773b690a880d1dd56cde44b4735314eb657"
+    },
+    {
+      "source": "apps/frontend/tests/gods-eye-view-parameters.test.mjs",
+      "sha256": "c12f1ab72d1beefd4a10ed126df61096ae1ca196fb2578fb7089e8bd768cfbdd"
+    }
+  ],
+  "test_scope": {
+    "included": [
+      "admin",
+      "sensors",
+      "sensor-readings",
+      "reset",
+      "parameters"
+    ],
+    "excluded": {
+      "module-manager": "Installation UI retired; Deploy Studio owns install/resume/update/redeploy."
+    },
+    "source_commit": "3c82617fd298933995e954955841007253cc0985",
+    "validation": {
+      "command": "npm test --prefix apps/frontend",
+      "result": "passed",
+      "tests": 89,
+      "failed": 0,
+      "skipped": 0,
+      "date": "2026-11-05",
+      "fixture_or_assertion_adaptations": false,
+      "sandbox_note": "Initial default runner spawn EPERM; rerun with escalation allowed isolated Node child processes."
+    },
+    "source_repository": "https://github.com/jgangini/oci-ai-data-platform-workbench-starter-kits"
+  }
+}
