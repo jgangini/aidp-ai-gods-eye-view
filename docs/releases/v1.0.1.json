@@ -1,0 +1,105 @@
+{
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "tag": "v1.0.1",
+  "commit": "6605611c02ea79f1732044ea8305b8b6da322ed8",
+  "release_id": 436036581,
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.1",
+  "immutable": true,
+  "draft": false,
+  "prerelease": false,
+  "assets": {
+    "gods-eye-view-api-image-amd64.tar.gz": {
+      "asset_id": 715638310,
+      "size": 150631078,
+      "sha256": "c7ffead0b39db0696b6fb971fc6e396c043db2c9c4cd4045e5e34a8fb58f8859"
+    },
+    "gods-eye-view-api-release.json": {
+      "asset_id": 715638306,
+      "size": 561,
+      "sha256": "9104640af0cbef214ed9638d1152f90c62dc9b74f0c71b5f8b071919ed8f48c1"
+    },
+    "gods-eye-view-gateway-image-amd64.tar.gz": {
+      "asset_id": 715638298,
+      "size": 20445996,
+      "sha256": "2293c8782a94edc6d1e89548c0bf327945a5fba487d3c8c1fc9b34b8453d68d0"
+    },
+    "gods-eye-view-gateway-release.json": {
+      "asset_id": 715638336,
+      "size": 569,
+      "sha256": "94aa7266ee285dff86573e25d39f1b5da8febc3c16937627a14bea34b5a919d5"
+    },
+    "gods-eye-view-image-amd64.tar.gz": {
+      "asset_id": 715638300,
+      "size": 261952147,
+      "sha256": "d205ee578c77be9ff89da34f33d53fd54df1da6b689d906ff67debb64dc60a72"
+    },
+    "gods-eye-view-release.json": {
+      "asset_id": 715638308,
+      "size": 553,
+      "sha256": "85683ad6c4cbe454abebfb7653d1b6f7601962805743a01a6f547bd9444e6529"
+    }
+  },
+  "images": {
+    "api": {
+      "asset_name": "gods-eye-view-api-image-amd64.tar.gz",
+      "image_id": "sha256:ebeb4ce7bad51d4cfd88788936bb1805403a2a9c6ea3ac6990728dc821ca28f8",
+      "image_tag": "gods-eye-view-api:6605611c02ea79f1732044ea8305b8b6da322ed8",
+      "platform": "linux/amd64",
+      "sha256": "c7ffead0b39db0696b6fb971fc6e396c043db2c9c4cd4045e5e34a8fb58f8859"
+    },
+    "viewer": {
+      "asset_name": "gods-eye-view-image-amd64.tar.gz",
+      "image_id": "sha256:ed48bbf801613fc28d7cce869950c37eba9a63648083b2d9e278a434f6e2d017",
+      "image_tag": "gods-eye-view:6605611c02ea79f1732044ea8305b8b6da322ed8",
+      "platform": "linux/amd64",
+      "sha256": "d205ee578c77be9ff89da34f33d53fd54df1da6b689d906ff67debb64dc60a72"
+    },
+    "gateway": {
+      "asset_name": "gods-eye-view-gateway-image-amd64.tar.gz",
+      "image_id": "sha256:3bcc3bba458af7e572bdc1fb94faccf1c5e52ab2bbc81ba5b80333872b9c891b",
+      "image_tag": "gods-eye-view-gateway:6605611c02ea79f1732044ea8305b8b6da322ed8",
+      "platform": "linux/amd64",
+      "sha256": "2293c8782a94edc6d1e89548c0bf327945a5fba487d3c8c1fc9b34b8453d68d0"
+    }
+  },
+  "preflight_local_bytes": "passed",
+  "postapply_local_bytes_and_simulated_cas": "passed",
+  "oci_mutations": 0,
+  "ci_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42150688959",
+  "source_archive": {
+    "limits": {
+      "github_archive_max_bytes": 104857600,
+      "github_source_max_files": 250,
+      "github_source_max_extracted_bytes": 10485760
+    },
+    "archive_bytes": 46611182,
+    "selected_files": 88,
+    "selected_bytes": 1153026,
+    "preflight_assets": 6,
+    "postapply_assets": 6,
+    "form_fields": 15,
+    "runtime_fields": 9
+  },
+  "vm_bundle": {
+    "bytes": 22709,
+    "sha256": "7fab22b0c20c405f79718b58b77071f64c99dd4d3c0c61ea0c7bc57bf44a4a7b",
+    "release_asset": false,
+    "derived_by_preflight": true
+  },
+  "host_revision": {
+    "protocol": 2,
+    "sha256": "77909c23cfa39ac899a9c04e817cd2290fee4ccdbc16f6bea2acf708c37737d5",
+    "covers": [
+      "vm_bundle_sha256",
+      "terraform/templatefile/user_data.sh"
+    ]
+  },
+  "validation": {
+    "product_passed": 1671,
+    "product_skipped": 6,
+    "terraform_mock_passed": 3,
+    "sentrux": "DEGRADED; initial baseline retained",
+    "native_oci_acceptance": "pending",
+    "browser_certificate_trust": "explicit trust in the self-signed IP leaf required; acceptance pending"
+  }
+}

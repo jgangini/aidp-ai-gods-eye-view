@@ -1,0 +1,70 @@
+{
+  "tag": "v1.0.0",
+  "commit": "219014036e3fbba1d808f5f10822aa786bf607f6",
+  "release_id": 436010655,
+  "immutable": true,
+  "draft": false,
+  "prerelease": false,
+  "assets": {
+    "gods-eye-view-api-image-amd64.tar.gz": {
+      "asset_id": 715559039,
+      "size": 150623853,
+      "sha256": "4c3d149ce7187a50fcc86823a2745281ba96f28a3c1334c12935809bb0746fd6"
+    },
+    "gods-eye-view-api-release.json": {
+      "asset_id": 715559038,
+      "size": 575,
+      "sha256": "efe4ecc9530bb09b8928bc8938dc1f0a9201a0b3ce3f6f842964020466558354"
+    },
+    "gods-eye-view-gateway-image-amd64.tar.gz": {
+      "asset_id": 715559033,
+      "size": 20446198,
+      "sha256": "e6d4aa3f74b123ceb001a8c37527010b00f27bfae00ec94b85ef0d5b39d45864"
+    },
+    "gods-eye-view-gateway-release.json": {
+      "asset_id": 715559059,
+      "size": 583,
+      "sha256": "3753c7160f6e6212addaf70676bd32a00da6ff35045a0f66a70cf1c0d9789118"
+    },
+    "gods-eye-view-image-amd64.tar.gz": {
+      "asset_id": 715559034,
+      "size": 261959207,
+      "sha256": "dab36c985ff31692d1c10b9ca025a6bff1cd2e7480784ff1b6ec6e0daa2efc4f"
+    },
+    "gods-eye-view-release.json": {
+      "asset_id": 715559040,
+      "size": 567,
+      "sha256": "6438ab9347f157840e2c9bd2cfcf41a1907670554de2c4220b91ca4866a925f9"
+    }
+  },
+  "preflight_local_bytes": "passed",
+  "postapply_local_bytes_and_simulated_cas": "passed",
+  "oci_mutations": 0,
+  "repository": "https://github.com/jgangini/aidp-ai-gods-eye-view",
+  "url": "https://github.com/jgangini/aidp-ai-gods-eye-view/releases/tag/v1.0.0",
+  "ci_url": "https://github.com/jgangini/aidp-ai-gods-eye-view/actions/runs/42147141832",
+  "source_archive": {
+    "limits": {
+      "github_archive_max_bytes": 104857600,
+      "github_source_max_files": 250,
+      "github_source_max_extracted_bytes": 10485760
+    },
+    "archive_bytes": 46595480,
+    "selected_files": 87,
+    "selected_bytes": 1138957,
+    "preflight_assets": 6,
+    "postapply_assets": 6
+  },
+  "vm_bundle": {
+    "bytes": 16995,
+    "sha256": "f69991224a04364c8929107ca3895c8b8228ea3f141379d9adbb2f55c29a24b8",
+    "release_asset": false
+  },
+  "validation": {
+    "product_passed": 1625,
+    "product_skipped": 6,
+    "terraform_mock_passed": 2,
+    "sentrux": "DEGRADED; initial baseline retained",
+    "native_oci_acceptance": "pending"
+  }
+}

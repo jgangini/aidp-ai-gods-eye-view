@@ -1,0 +1,21 @@
+# Revisión de dependencias nativas: evidencia
+
+### Auditoría de dependencias y alcance
+
+El árbol upstream fijado produjo ocho avisos npm en la auditoría con acceso a red del 2026-11-05: siete altos y uno crítico, incluidos DOMPurify, Vite y sharp. Se conserva el pin; no ejecutar `npm audit fix` sobre el árbol generado. Para corregir una dependencia, revisar su aplicabilidad, seleccionar una revisión upstream o un parche explícito verificado por hash, regenerar el lock de forma determinista y repetir las comprobaciones nativas, de proxy y build antes de publicar. Pasar pruebas y builds locales no cierra por sí solo ese gate de seguridad.
+
+El [aviso crítico DOMPurify GHSA-cg2g-xh64-v4q7](https://github.com/cure53/DOMPurify/security/advisories/GHSA-cg2g-xh64-v4q7) requiere `SAFE_FOR_TEMPLATES`, un modo que devuelva DOM, un nodo DOM aportado por el llamador con un shadow root adjunto y posterior evaluación de plantillas. `@cesium/engine/Source/Core/Credit.js` es el único consumidor DOMPurify encontrado en el código nativo y las dependencias inspeccionadas: su constructor exige un string y la línea 94 llama `sanitize(this._html)` con configuración predeterminada. El producto no establece hooks ni configuración DOMPurify. Esos prerrequisitos están ausentes en esta ruta de créditos; `tests/sanitizer-boundary.test.mjs` ejercita la implementación real de `Credit` y rechaza entrada de nodos DOM. Es una conclusión acotada de aplicabilidad; no declara limpia la auditoría ni garantiza usos futuros. Una actualización revisada a DOMPurify 3.4.17 o posterior sigue siendo la vía de corrección al cambiar el contrato de dependencias upstream.
+
+La revisión de los siete avisos altos distinguió el uso efectivo de la presencia de un paquete en la imagen:
+
+| Dependencia fijada | Ruta y alcance observados | Fuente del aviso |
+| --- | --- | --- |
+| `puppeteer` 25.10.0 | Scripts QA; hereda el aviso a través de `puppeteer-core` y `chromium-bidi`. No se identificó un llamador productivo. | Cadena de dependencias de `npm audit`; aviso Zod enlazado abajo. |
+| `puppeteer-core` 25.10.0 | Parte de la misma cadena QA. No se identificó una ruta pública que la ejecute. | Cadena de dependencias de `npm audit`; aviso Zod. |
+| `chromium-bidi` 17.0.2 | Utilizado por Puppeteer; hereda el aviso Zod. No se identificó una ruta pública que lo ejecute. | Cadena de dependencias de `npm audit`; aviso Zod. |
+| `zod` 3.25.76 | Validación de colecciones en la cadena QA anterior. No se encontró un consumidor de producción en la revisión. | [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). |
+| `sharp` 0.35.4 | Scripts QA y tests de iconos SVG; no se encontró un import en providers/runtime. El procesamiento de imágenes no confiables en esas herramientas requiere revisión. | [GHSA-wq5f-xc86-pv6w](https://github.com/advisories/GHSA-wq5f-xc86-pv6w), dependencia librsvg. |
+| `source-map-js` 1.2.1 | PostCSS lee/genera sourcemaps durante el build. No se identificó transformación de sourcemaps aportados por HTTP en el runtime. | [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q). |
+| `vite` 6.4.3 | Se utiliza en producción mediante `preview()`. Los avisos revisados corresponden al editor/dev server, transformación HTML de desarrollo o middleware de acceso al filesystem de desarrollo, no observados en el flujo preview. El aviso alto de editor exige Windows; la imagen productiva es Linux. | [Editor](https://github.com/advisories/GHSA-587h-7wmj-h5pm), [filesystem](https://github.com/advisories/GHSA-rq7h-c2jc-7f22), [HTML](https://github.com/advisories/GHSA-9jrq-w75r-8gcw). |
+
+La evidencia de rutas incluye `native/runtime.mjs:7–20`, los imports QA de `scripts/qa-admin-outlines.mjs:30–31`, PostCSS `lib/input.js:5` y la implementación instalada de Vite `dep-Dm0c1Wj2.js`: `preview()` en la línea 48370, frente al registro de editor/raw-files del servidor de desarrollo en 38838–38850. Estos paths pertenecen al árbol generado fijado. Los siete avisos altos no son necesariamente siete vulnerabilidades independientes: cuatro corresponden a la misma cadena Puppeteer/Zod. No se confirmó exposición productiva en esta revisión; los paquetes afectados siguen presentes en la imagen y deben reevaluarse si cambia su uso. No se amplió el alcance a una actualización general de dependencias.

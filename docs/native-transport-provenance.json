@@ -1,0 +1,23 @@
+{
+  "source_commit": "3c82617fd298933995e954955841007253cc0985",
+  "source_path": "terraform/hooks/post_apply.py",
+  "source_sha256": "375daa0c7596629582b713485c02f073923980b1ab89efcd870c12d0f6ad9925",
+  "symbols": [
+    "AidpApi",
+    "ApiRequestError",
+    "ApiResponse",
+    "ReconcileError",
+    "_sleep",
+    "assert_fields",
+    "assert_operator_platform_admin",
+    "build_signer",
+    "ensure_workspace_folder",
+    "exact_one",
+    "is_active_or_raise",
+    "load_oci_config",
+    "render_runtime_oci_config",
+    "role_has_member",
+    "workspace_object",
+    "workspace_object_key"
+  ]
+}

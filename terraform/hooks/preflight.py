@@ -1,0 +1,274 @@
+"""Deploy Studio preflight: validate exact identities without provisioning anything."""
+from __future__ import annotations
+
+import json
+import asyncio
+import os
+import re
+import sys
+from pathlib import Path
+from urllib.parse import quote
+
+from native_api import AidpApi, assert_operator_platform_admin, build_signer, load_oci_config
+from first_install import vm_inputs, compartment_scope
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "apps/backend"))
+sys.path.insert(0, str(ROOT / "scripts/deployment"))
+from image_assets import TAG
+from app.config import Settings
+from app.services.oci.identity import IdentityClient
+from app.services.oci.aidp import AidpClient
+from app.modules.ai_gods_eye_view.runtime.control_store import ObjectControlStore
+
+DEFAULT_RESOURCE_PREFIX = "aidp-gods-eye-view"
+BUCKET_LAYERS = ("landing", "bronze", "silver", "gold", "artifacts")
+BUCKET_FIELDS = {layer: (layer + "_bucket_mode", layer + "_new_bucket_name", layer + "_existing_bucket_name") for layer in BUCKET_LAYERS[:-1]}
+BUCKET_FIELDS["artifacts"] = ("artifacts_mode", "artifacts_bucket_name", "artifacts_existing_bucket_name")
+
+
+class CatalogSelectionError(ValueError):
+    pass
+
+
+class BucketSelectionError(ValueError):
+    pass
+
+
+def bucket_inputs(inputs):
+    if not isinstance(inputs, dict) or "create_buckets" in inputs:
+        raise BucketSelectionError("Select an individual mode for each of the five buckets")
+    modes, names = {}, {}
+    for layer in BUCKET_LAYERS:
+        mode_field, new_field, existing_field = BUCKET_FIELDS[layer]
+        mode = inputs.get(mode_field)
+        if not isinstance(mode, str) or mode not in {"new", "existing"}:
+            raise BucketSelectionError("Select new or existing for the " + layer + " bucket")
+        field = new_field if mode == "new" else existing_field
+        name = inputs.get(field)
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", name):
+            raise BucketSelectionError("Select a valid name for the " + layer + " bucket")
+        modes[layer], names[layer] = mode, name
+    if len(set(names.values())) != 5:
+        raise BucketSelectionError("Artifacts and the four medallion buckets must have distinct names")
+    return {**inputs, "artifacts_bucket_name": names["artifacts"],
+        "medallion_bucket_names": json.dumps({layer: names[layer] for layer in BUCKET_LAYERS[:-1]}, sort_keys=True),
+        "bucket_modes": json.dumps(modes, sort_keys=True)}
+
+
+def verify_existing_buckets(context, config, storage):
+    values = bucket_inputs(context["inputs"])
+    existing = [layer for layer, mode in json.loads(values["bucket_modes"]).items() if mode == "existing"]
+    if not existing:
+        return
+    if context.get("compartment_mode") == "new":
+        raise BucketSelectionError("Existing buckets require an existing deployment compartment")
+    scope = compartment_scope(context, config)
+    names = {**json.loads(values["medallion_bucket_names"]), "artifacts": values["artifacts_bucket_name"]}
+    try:
+        namespace = storage.get_namespace(compartment_id=config["tenancy"]).data
+        for layer in existing:
+            bucket = storage.get_bucket(namespace, names[layer]).data
+            if bucket.name != names[layer] or bucket.compartment_id != scope:
+                raise BucketSelectionError("Existing buckets must belong to the selected deployment compartment")
+    except BucketSelectionError:
+        raise
+    except Exception:
+        raise BucketSelectionError("Existing buckets must be accessible in the selected region and compartment") from None
+
+
+def regional_storage(config, signer, region):
+    import oci
+    client = oci.object_storage.ObjectStorageClient({**config, "region": region}, signer=signer)
+    # A redirect must not turn the selected-region bucket check into a lookup elsewhere.
+    client.base_client.session.max_redirects = 0
+    return client
+
+
+def source_context(context):
+    source = context.get("source", {})
+    commit = source.get("commit_sha", "")
+    if source.get("repository") != "https://github.com/jgangini/aidp-ai-gods-eye-view" or not re.fullmatch(r"[a-f0-9]{40}", commit):
+        raise ValueError("Runner source identity is invalid")
+    inputs = context.get("inputs", {})
+    if inputs.get("source_commit_sha", commit) != commit:
+        raise ValueError("Terraform source SHA differs from the runner's immutable source")
+    tag = source.get("ref")
+    if not isinstance(tag, str) or not TAG.fullmatch(tag) or inputs.get("release_tag", tag) != tag:
+        raise ValueError("Release tag differs from the runner's stable source")
+    prefix = inputs.get("name", DEFAULT_RESOURCE_PREFIX)
+    if not isinstance(prefix, str) or not re.fullmatch(r"[a-z][a-z0-9-]{2,40}", prefix):
+        raise ValueError("Invalid infrastructure resource prefix")
+    return {**context, "inputs": bucket_inputs({**inputs, "source_commit_sha": commit, "release_tag": tag, "name": prefix})}
+
+
+class RoleClient(AidpClient):
+    """Use the runner's authorized signer with the runtime's effective-role resolver."""
+    def __init__(self, api):
+        self.api = api
+
+    def _list(self, path, *, params=None, phase=None):
+        return self.api.list_all(path, params=params)
+
+    def _request(self, method, path, *, phase=None, **kwargs):
+        return self.api.request(method, path, **kwargs).body
+
+
+async def effective_admin(settings, signer, user_id, api):
+    from oci._vendor import requests
+    identity = IdentityClient(settings, client=requests.Session())
+    identity.signer = signer
+    try:
+        return await identity.has_aidp_admin_role(user_id, RoleClient(api))
+    finally:
+        await identity.close()
+
+
+def validate_inputs(inputs):
+    inputs = bucket_inputs(inputs)
+    for name, kind in (("admin_user_ocid", "user"), ("identity_domain_id", "domain")):
+        if not re.fullmatch(r"ocid1\." + kind + r"\.[A-Za-z0-9_.-]+", str(inputs.get(name, ""))):
+            raise ValueError(f"Invalid {name}")
+    if inputs.get("aidp_mode") not in {"new", "existing"}:
+        raise ValueError("aidp_mode must be new or existing")
+    if inputs["aidp_mode"] == "new" and inputs.get("existing_catalog_key"):
+        raise CatalogSelectionError("An external catalog key requires an existing AIDP platform")
+    if inputs["aidp_mode"] == "existing":
+        if not str(inputs.get("existing_ai_data_platform_ocid", "")).startswith("ocid1.aidataplatform."):
+            raise ValueError("An exact existing AIDP OCID is required")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", str(inputs.get("existing_workspace_key", ""))):
+            raise ValueError("An exact existing workspace key is required")
+    return {**inputs, "medallion_bucket_names": json.loads(inputs["medallion_bucket_names"])}
+
+
+def verify_administrator(inputs, domain, user):
+    """SCIM user is fetched from this exact domain, never inferred from display name."""
+    if domain.get("id") != inputs["identity_domain_id"] or domain.get("lifecycle_state") != "ACTIVE":
+        raise ValueError("Selected Identity Domain is unavailable")
+    if user.get("active") is not True or user.get("ocid") != inputs["admin_user_ocid"]:
+        raise ValueError("Selected administrator is inactive or belongs to another domain")
+
+
+def installation_identity(context, config, platform_id):
+    inputs = context["inputs"]
+    return {"product": "gods_eye_view", "deployment_id": context["deployment_id"],
+        "platform_id": platform_id, "admin_user_ocid": inputs["admin_user_ocid"],
+        "identity_domain_id": inputs["identity_domain_id"], "operator_user_ocid": config["user"]}
+
+
+def recorded_catalog_key(context, config, storage):
+    namespace = storage.get_namespace(compartment_id=config["tenancy"]).data
+    store = ObjectControlStore(storage, namespace, context["inputs"]["artifacts_bucket_name"],
+        prefix=".control/gods_eye_view/install/")
+    receipt, _etag = store.get_json("operation.json")
+    if receipt is None:
+        return ""
+    expected = installation_identity(context, config, context["inputs"]["existing_ai_data_platform_ocid"])
+    if receipt.get("identity") != expected:
+        raise ValueError("Installation receipt belongs to a different target or administrator")
+    key = receipt.get("resources", {}).get("catalog", "")
+    if not isinstance(key, str):
+        raise ValueError("Recorded catalog identity is invalid")
+    return key
+
+
+def verify_catalog_selection(api, selected_key, recorded_key=""):
+    if selected_key and recorded_key and selected_key != recorded_key:
+        raise CatalogSelectionError("Selected catalog differs from this installation's exact receipt")
+    key = selected_key or recorded_key
+    if key:
+        if not isinstance(key, str) or len(key) > 256 or any(c in key for c in "\r\n\x00"):
+            raise CatalogSelectionError("Invalid catalog key")
+        value = api.request("GET", "/catalogs/" + quote(key, safe="")).body
+        if value.get("key") != key or value.get("displayName") != "oci_medallion" or value.get("catalogType") != "INTERNAL":
+            raise CatalogSelectionError("Selected catalog differs from its exact INTERNAL identity")
+        return value
+    if any(value.get("displayName") == "oci_medallion" for value in api.list_all("/catalogs")):
+        raise CatalogSelectionError("Existing oci_medallion requires its exact existing_catalog_key or this installation's verified receipt")
+    return None
+
+
+def probe(context, config, *, domain_client=None, api_factory=AidpApi, known_catalog_key=None):
+    import oci
+    from oci._vendor import requests
+
+    values = validate_inputs(context.get("inputs", {}))
+    region = context["region"]
+    config = {**config, "region": region}
+    signer = build_signer(config)
+    identity = domain_client or oci.identity.IdentityClient(config, signer=signer)
+    storage = regional_storage(config, signer, region)
+    verify_existing_buckets(context, config, storage)
+    resolved_vm = vm_inputs(context, config, oci.core.ComputeClient(config, signer=signer), identity)
+    subscriptions = identity.list_region_subscriptions(config["tenancy"]).data
+    home = [item.region_name for item in subscriptions if item.is_home_region]
+    if len(home) != 1 or not any(item.region_name == region and item.status == "READY" for item in subscriptions):
+        raise ValueError("Deployment or home region is unavailable")
+    domain = identity.get_domain(values["identity_domain_id"]).data
+    endpoint = str(domain.url).rstrip("/")
+    if not re.fullmatch(r"https://[a-zA-Z0-9.-]+\.oraclecloud\.com", endpoint):
+        raise ValueError("Invalid Identity Domain endpoint")
+    # The stable OCI user ID is matched exactly within the selected domain.
+    response = requests.get(endpoint + "/admin/v1/Users", auth=signer, timeout=30,
+        params={"filter": 'ocid eq "' + values["admin_user_ocid"] + '"', "count": 2})
+    response.raise_for_status()
+    users = response.json()
+    if users.get("totalResults") != 1 or len(users.get("Resources", [])) != 1:
+        raise ValueError("Administrator identity is absent or ambiguous in this domain")
+    api = None
+    if values["aidp_mode"] == "existing":
+        api = api_factory(region, values["existing_ai_data_platform_ocid"], signer, context["deployment_id"])
+        try:
+            assert_operator_platform_admin(api, config["user"], attempts=1)
+            workspace = api.request("GET", "/workspaces/" + quote(values["existing_workspace_key"], safe="")).body
+            if workspace.get("key") != values["existing_workspace_key"] or workspace.get("lifecycleState", workspace.get("state")) != "ACTIVE":
+                raise ValueError("Selected workspace is unavailable")
+            verify_administrator(values, {"id": domain.id, "lifecycle_state": domain.lifecycle_state}, users["Resources"][0])
+            settings = Settings(identity_domain_id=domain.id, identity_domain_url=endpoint,
+                admin_user_ocid=values["admin_user_ocid"], aidp_region=region,
+                aidp_platform_id=values["existing_ai_data_platform_ocid"])
+            if not asyncio.run(effective_admin(settings, signer, users["Resources"][0]["id"], api)):
+                raise ValueError("Selected administrator lacks effective platform permissions")
+            if known_catalog_key is None:
+                known_catalog_key = recorded_catalog_key(context, config, storage)
+            verify_catalog_selection(api, values.get("existing_catalog_key", ""), known_catalog_key)
+        finally:
+            api.session.close()
+    else:
+        verify_administrator(values, {"id": domain.id, "lifecycle_state": domain.lifecycle_state}, users["Resources"][0])
+    return {"inputs": {**resolved_vm, "name": values.get("name", DEFAULT_RESOURCE_PREFIX),
+        "artifacts_bucket_name": values["artifacts_bucket_name"], "bucket_modes": values["bucket_modes"],
+        "medallion_bucket_names": json.dumps(values["medallion_bucket_names"], sort_keys=True),
+        "identity_domain_url": endpoint, "home_region": home[0], "operator_user_ocid": config["user"],
+        "operator_fingerprint": config["fingerprint"]}, "events": [{"name": "Administrator authorization",
+        "status": "passed", "message": "Domain identity verified; effective AIDP roles " + ("verified" if api else "require post-bootstrap verification")} ]}
+
+
+def main():
+    result_path = Path(os.environ["DEPLOY_STUDIO_RESULT"])
+    try:
+        context = source_context(json.loads(Path(os.environ["DEPLOY_STUDIO_CONTEXT"]).read_text(encoding="utf-8")))
+        config = load_oci_config(os.environ["DEPLOY_STUDIO_OCI_CONFIG"], os.environ["DEPLOY_STUDIO_OCI_KEY"])
+        sys.path.insert(0, str(ROOT / "scripts/deployment"))
+        from image_assets import inspect_handoff
+        inspect_handoff(context)
+        result = probe(context, config)
+        result["events"].append({"name": "Release metadata", "status": "passed",
+            "message": "Immutable source, access and image manifests verified; archive bytes are checked before VM delivery"})
+        code = 0
+    except (CatalogSelectionError, BucketSelectionError) as error:
+        name = "Bucket selection" if isinstance(error, BucketSelectionError) else "Catalog selection"
+        result = {"inputs": {}, "events": [{"name": name, "status": "failed", "message": str(error)}]}
+        code = 1
+    except Exception:
+        # HTTP bodies/config may carry sensitive information; keep the runner event bounded.
+        result = {"inputs": {}, "events": [{"name": "Administrator authorization", "status": "failed",
+            "message": "Release handoff, compartment, catalog, identity, workspace or effective permissions could not be verified"}]}
+        code = 1
+    result_path.write_text(json.dumps(result) + "\n", encoding="utf-8")
+    result_path.chmod(0o600)
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
